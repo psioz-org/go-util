@@ -1,4 +1,4 @@
-package stringsz
+package stringz
 
 import (
 	"context"
