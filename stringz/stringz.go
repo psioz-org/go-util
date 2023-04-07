@@ -94,7 +94,6 @@ func ReplaceAllStringSubmatchFunc(re *regexp.Regexp, str string, repl func([]str
 	for _, v := range re.FindAllSubmatchIndex([]byte(str), -1) {
 		groups := make([]string, 0)
 		for i := 0; i < len(v); i += 2 {
-			fmt.Printf("zz: %v %v\n", v[i], v[i+1])
 			if v[i] >= 0 && v[i+1] >= 0 { //Note: should always but to be safe
 				groups = append(groups, str[v[i]:v[i+1]])
 			}
