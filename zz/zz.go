@@ -56,61 +56,51 @@ func To[T any](obj interface{}) (out T, err error) {
 	s := fmt.Sprintf("%v", obj)
 	switch any(out).(type) {
 	case bool:
-		if s == "" || s == "<nil>" { //Custom to false instead of error
+		switch s {
+		case "", "<nil>": //Custom to false instead of error
 			v = false
-		} else {
-			v, err = strconv.ParseBool(s)
-			if err != nil {
+		default:
+			if v, err = strconv.ParseBool(s); err != nil {
 				err = nil
 				v = true
 			}
 		}
 	case complex64:
-		if vc128, err = strconv.ParseComplex(s, 64); err == nil {
-			v = complex64(vc128)
-		}
+		vc128, err = strconv.ParseComplex(s, 64)
+		v = complex64(vc128)
 	case complex128:
 		v, err = strconv.ParseComplex(s, 128)
 	case int:
-		if vi64, err = strconv.ParseInt(s, 10, strconv.IntSize); err == nil {
-			v = int(vi64)
-		}
+		vi64, err = strconv.ParseInt(s, 10, strconv.IntSize)
+		v = int(vi64)
 	case int8:
-		if vi64, err = strconv.ParseInt(s, 10, 8); err == nil {
-			v = int8(vi64)
-		}
+		vi64, err = strconv.ParseInt(s, 10, 8)
+		v = int8(vi64)
 	case int16:
-		if vi64, err = strconv.ParseInt(s, 10, 16); err == nil {
-			v = int16(vi64)
-		}
+		vi64, err = strconv.ParseInt(s, 10, 16)
+		v = int16(vi64)
 	case int32: //=rune
-		if vi64, err = strconv.ParseInt(s, 10, 32); err == nil {
-			v = int32(vi64)
-		}
+		vi64, err = strconv.ParseInt(s, 10, 32)
+		v = int32(vi64)
 	case int64:
 		v, err = strconv.ParseInt(s, 10, 64)
 	case uint:
-		if vui64, err = strconv.ParseUint(s, 10, strconv.IntSize); err == nil {
-			v = uint(vui64)
-		}
+		vui64, err = strconv.ParseUint(s, 10, strconv.IntSize)
+		v = uint(vui64)
 	case uint8: //=byte
-		if vui64, err = strconv.ParseUint(s, 10, 8); err == nil {
-			v = uint8(vui64)
-		}
+		vui64, err = strconv.ParseUint(s, 10, 8)
+		v = uint8(vui64)
 	case uint16:
-		if vui64, err = strconv.ParseUint(s, 10, 16); err == nil {
-			v = uint16(vui64)
-		}
+		vui64, err = strconv.ParseUint(s, 10, 16)
+		v = uint16(vui64)
 	case uint32:
-		if vui64, err = strconv.ParseUint(s, 10, 32); err == nil {
-			v = uint32(vui64)
-		}
+		vui64, err = strconv.ParseUint(s, 10, 32)
+		v = uint32(vui64)
 	case uint64:
 		v, err = strconv.ParseUint(s, 10, 64)
 	case float32:
-		if vf64, err = strconv.ParseFloat(s, 32); err == nil {
-			v = float32(vf64)
-		}
+		vf64, err = strconv.ParseFloat(s, 32)
+		v = float32(vf64)
 	case float64:
 		v, err = strconv.ParseFloat(s, 64)
 	case string:
