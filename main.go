@@ -12,7 +12,7 @@ func main() {
 func sum(a int, b int) int {
 	fmt.Println("Add percent of test coverage")
 	fmt.Println("Add percent of test coverageB")
-	fmt.Println("Add percent of test coverageD")
+	fmt.Println("Add percent of test coverageE")
 	left := []string{"leftA", "leftB", "leftC"}
 	right := []string{"rightA", "rightB", "rightC"}
 
