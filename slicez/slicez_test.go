@@ -6,6 +6,7 @@ import (
 )
 
 func TestClone(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		a []int
 	}
@@ -32,6 +33,7 @@ func TestClone(t *testing.T) {
 }
 
 func TestCloneCast(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		a []string
 	}
