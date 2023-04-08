@@ -233,28 +233,27 @@ func getFuncAST(funcname, filename string) (_ *ast.FuncDecl, _ *token.FileSet) {
 		return
 	}
 	for _, d := range file.Decls {
-		var f *ast.FuncDecl
-		var ok bool
-		if f, ok = d.(*ast.FuncDecl); !ok || !strings.HasSuffix(funcname, "."+f.Name.Name) {
-			continue
-		}
-		if f.Recv == nil {
+		if f, ok := d.(*ast.FuncDecl); ok && strings.HasSuffix(funcname, "."+f.Name.Name) && (f.Recv == nil || matchStructFunc(f, funcname)) {
 			return f, fs
-		}
-		for _, l := range f.Recv.List { // fn is *ast.FuncDecl
-			var fullname string
-			switch vToken := l.Type.(type) {
-			case *ast.StarExpr:
-				fullname = fmt.Sprintf(".(*%v).%v", vToken.X, f.Name.Name)
-			case *ast.Ident:
-				fullname = fmt.Sprintf(".%v.%v", vToken.Name, f.Name.Name)
-			}
-			if fullname == funcname {
-				return f, fs
-			}
 		}
 	}
 	return
+}
+
+func matchStructFunc(f *ast.FuncDecl, funcname string) bool {
+	for _, l := range f.Recv.List { // fn is *ast.FuncDecl
+		var fullname string
+		switch vToken := l.Type.(type) {
+		case *ast.StarExpr:
+			fullname = fmt.Sprintf(".(*%v).%v", vToken.X, f.Name.Name)
+		case *ast.Ident:
+			fullname = fmt.Sprintf(".%v.%v", vToken.Name, f.Name.Name)
+		}
+		if fullname == funcname {
+			return true
+		}
+	}
+	return false
 }
 
 func getFuncBodyString(f any, fs *token.FileSet) string {
@@ -263,7 +262,7 @@ func getFuncBodyString(f any, fs *token.FileSet) string {
 	}
 	var buf bytes.Buffer
 	if err := printer.Fprint(&buf, fs, f); err != nil {
-		panic(err)
+		return ""
 	}
 	return buf.String()
 }
