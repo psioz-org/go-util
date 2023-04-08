@@ -153,6 +153,9 @@ func To[T any](obj interface{}) (out T, err error) {
 		case *error: //Unlike other instance, "out error" starts with nil so any(out).(type) = nil. We still can check pointer.
 			v = errors.New(s)
 		default:
+			if s == "" {
+				return
+			}
 			if s == "<nil>" {
 				s = "null"
 			}
