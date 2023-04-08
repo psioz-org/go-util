@@ -2241,6 +2241,13 @@ func TestTo(t *testing.T) {
 	const stringTo = "string"
 	stringTests := []testCase[string]{
 		{
+			name: "nil > " + stringTo,
+			args: args{
+				obj: nil,
+			},
+			wantOut: "<nil>",
+		},
+		{
 			name: "complex64 > " + stringTo,
 			args: args{
 				obj: complex(float32(77), float32(0)),
@@ -2698,6 +2705,20 @@ func TestTo(t *testing.T) {
 				obj: `{"X":777,"Y":888}`,
 			},
 			wantOut: &Rect{X: 777, Y: 888},
+		},
+		{
+			name: "string > " + structPointerTo,
+			args: args{
+				obj: `null`,
+			},
+			wantOut: nil,
+		},
+		{
+			name: "string > " + structPointerTo,
+			args: args{
+				obj: `<nil>`,
+			},
+			wantOut: nil,
 		},
 	}
 	for _, tt := range structPointerTests {
