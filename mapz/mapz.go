@@ -3,7 +3,7 @@ package mapz
 import (
 	"encoding/json"
 
-	"github.com/zev-zakaryan/go-util/zz"
+	"github.com/zev-zakaryan/go-util/conv"
 )
 
 func Join(out map[string]string, excludeEmpty bool, in ...map[string]string) {
@@ -45,7 +45,7 @@ func ToStringMap(obj interface{}) map[string]string {
 	json.Unmarshal(objJ, &outI)
 	out := make(map[string]string)
 	for k, v := range outI {
-		out[k] = zz.ToForce[string](v)
+		out[k] = conv.ToForce[string](v)
 	}
 	return out
 }

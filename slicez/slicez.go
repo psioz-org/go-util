@@ -1,6 +1,6 @@
 package slicez
 
-import "github.com/zev-zakaryan/go-util/zz"
+import "github.com/zev-zakaryan/go-util/conv"
 
 func Clone[T any](a []T) []T {
 	return append([]T(nil), a...)
@@ -10,7 +10,7 @@ func Clone[T any](a []T) []T {
 func CloneCast[T any, U any](a []U) []T {
 	b := make([]T, len(a))
 	for i := range a {
-		b[i] = zz.ToForce[T](a[i])
+		b[i] = conv.ToForce[T](a[i])
 	}
 	return b
 }
