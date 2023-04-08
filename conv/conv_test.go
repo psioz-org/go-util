@@ -22,7 +22,34 @@ var (
 	jsonFullCheckMapObjOnlyFloat = map[string]interface{}{"empty": "", "false": false, "float": 777.7, "int": 777.0, "int string": "777", "null": nil, "string": "string", "true": true}
 )
 
+type Shape interface {
+	area() float64
+	area2() float64
+}
+type Rect struct {
+	X    float64
+	Y    float64
+	w, h float64
+}
+
+func (r Rect) area() float64 {
+	return r.w * r.h
+}
+
+func (r *Rect) area2() float64 {
+	return r.w * r.h
+}
+
+func (r *Rect) area3() float64 {
+	return r.w * r.h
+}
+
+func func1() {
+	fmt.Println("func1 body")
+}
+
 func TestGetItemTestGeneric(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		obj  interface{}
 		keys string
@@ -97,6 +124,7 @@ func TestGetItemTestGeneric(t *testing.T) {
 }
 
 func TestGetItem(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		obj  interface{}
 		keys string
@@ -182,6 +210,7 @@ func TestGetItem(t *testing.T) {
 }
 
 func TestTernary(t *testing.T) {
+	t.Parallel()
 	type args[T any] struct {
 		b  bool
 		vt T
@@ -222,6 +251,7 @@ func TestTernary(t *testing.T) {
 }
 
 func TestTernaryInt(t *testing.T) {
+	t.Parallel()
 	type args[T any] struct {
 		b  bool
 		vt T
@@ -263,6 +293,7 @@ func TestTernaryInt(t *testing.T) {
 }
 
 func TestTo(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		obj interface{}
 	}
@@ -2800,6 +2831,7 @@ func TestTo(t *testing.T) {
 }
 
 func TestToForce(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		obj interface{}
 	}
@@ -2870,6 +2902,7 @@ func TestToForce(t *testing.T) {
 }
 
 func Test_getFuncBodyString(t *testing.T) {
+	t.Parallel()
 	_, filename, _, _ := runtime.Caller(0)
 	_, fs := getFuncAST("Test_getFuncBodyString", filename)
 	type args struct {
@@ -2896,30 +2929,4 @@ func Test_getFuncBodyString(t *testing.T) {
 			t.Errorf("The code did not panic")
 		})
 	}
-}
-
-type Shape interface {
-	area() float64
-	area2() float64
-}
-type Rect struct {
-	X    float64
-	Y    float64
-	w, h float64
-}
-
-func (r Rect) area() float64 {
-	return r.w * r.h
-}
-
-func (r *Rect) area2() float64 {
-	return r.w * r.h
-}
-
-func (r *Rect) area3() float64 {
-	return r.w * r.h
-}
-
-func func1() {
-	fmt.Println("func1 body")
 }
