@@ -3,6 +3,7 @@ package conv
 import (
 	"errors"
 	"fmt"
+	"go/ast"
 	"go/token"
 	"reflect"
 	"regexp"
@@ -2901,6 +2902,50 @@ func TestToForce(t *testing.T) {
 	}
 }
 
+func Test_getFuncAST(t *testing.T) {
+	_, filename, _, _ := runtime.Caller(0)
+	type args struct {
+		funcname string
+		filename string
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  *ast.FuncDecl
+		want1 *token.FileSet
+	}{
+		{
+			name: "error test",
+			args: args{
+				funcname: "funcname",
+				filename: "xyz",
+			},
+			want:  nil,
+			want1: nil,
+		},
+		{
+			name: "match func but not match struct",
+			args: args{
+				funcname: "Triangle.area2",
+				filename: filename,
+			},
+			want:  nil,
+			want1: nil,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := getFuncAST(tt.args.funcname, tt.args.filename)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("getFuncAST() got = %v, want %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("getFuncAST() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
 func Test_getFuncBodyString(t *testing.T) {
 	t.Parallel()
 	_, filename, _, _ := runtime.Caller(0)
@@ -2915,18 +2960,19 @@ func Test_getFuncBodyString(t *testing.T) {
 		want string
 	}{
 		{
-			name: "panic test",
+			name: "error test",
 			args: args{
 				f:  "improper node type",
 				fs: fs,
 			},
+			want: "",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			defer func() { _ = recover() }()
-			getFuncBodyString(tt.args.f, tt.args.fs)
-			t.Errorf("The code did not panic")
+			if got1 := getFuncBodyString(tt.args.f, tt.args.fs); !reflect.DeepEqual(got1, tt.want) {
+				t.Errorf("getFuncBodyString() got = %v, want %v", got1, tt.want)
+			}
 		})
 	}
 }
