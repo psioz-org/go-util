@@ -1,7 +1,12 @@
-package zz
+package conv
 
 import (
+	"errors"
+	"fmt"
+	"go/token"
 	"reflect"
+	"regexp"
+	"runtime"
 	"testing"
 )
 
@@ -251,6 +256,7 @@ func TestTernaryInt(t *testing.T) {
 		vt T
 		vf T
 	}
+
 	type testCase[T any] struct {
 		name string
 		args args[T]
@@ -294,6 +300,7 @@ func TestTo(t *testing.T) {
 		args    args
 		wantOut T
 		wantErr bool
+		wantReg *regexp.Regexp
 	}
 	const boolTo = "bool"
 	testsBool := []testCase[bool]{
@@ -2366,6 +2373,196 @@ func TestTo(t *testing.T) {
 			},
 			wantOut: "77",
 		},
+		{
+			name: "error > " + stringTo,
+			args: args{
+				obj: errors.New("my error message"),
+			},
+			wantOut: "my error message",
+		},
+		{
+			name: "array > " + stringTo,
+			args: args{
+				obj: [5]interface{}{777, "777", true, 7.7, nil},
+			},
+			wantOut: `[777,"777",true,7.7,null]`,
+		},
+		{
+			name: "map > " + stringTo,
+			args: args{
+				obj: map[string]interface{}{"a": 777, "b": "777", "c": true, "d": 7.7, "5": nil},
+			},
+			wantOut: `{"5":null,"a":777,"b":"777","c":true,"d":7.7}`,
+		},
+		{
+			name: "slice > " + stringTo,
+			args: args{
+				obj: []interface{}{777, "777", true, 7.7, nil},
+			},
+			wantOut: `[777,"777",true,7.7,null]`,
+		},
+		{
+			name: "func > " + stringTo,
+			args: args{
+				obj: func1,
+			},
+			wantOut: `func func1() {
+	fmt.Println("func1 body")
+}`,
+		},
+		{
+			name: "func interface > " + stringTo,
+			args: args{
+				obj: Shape.area,
+			},
+			wantOut: `func(conv.Shape) float64`,
+		},
+		{
+			name: "func interface pointer > " + stringTo,
+			args: args{
+				obj: Shape.area,
+			},
+			wantOut: `func(conv.Shape) float64`,
+		},
+		{
+			name: "func struct > " + stringTo,
+			args: args{
+				obj: Rect.area,
+			},
+			wantOut: `func (r Rect) area() float64 {
+	return r.w * r.h
+}`,
+		},
+		{
+			name: "func struct pointer > " + stringTo,
+			args: args{
+				obj: (*Rect).area2,
+			},
+			wantOut: `func (r *Rect) area2() float64 {
+	return r.w * r.h
+}`,
+		},
+		{
+			name: "func struct pointer outside interface > " + stringTo,
+			args: args{
+				obj: (*Rect).area3,
+			},
+			wantOut: `func (r *Rect) area3() float64 {
+	return r.w * r.h
+}`,
+		},
+		{
+			name: "func struct instance > " + stringTo,
+			args: args{
+				obj: Rect{}.area,
+			},
+			wantOut: `func() float64`,
+		},
+		{
+			name: "func struct instance pointer > " + stringTo,
+			args: args{
+				obj: Rect{}.area,
+			},
+			wantOut: `func() float64`,
+		},
+		{
+			name: "func struct instance pointer outside interface > " + stringTo,
+			args: args{
+				obj: Rect{}.area,
+			},
+			wantOut: `func() float64`,
+		},
+		{
+			name: "anonymous function > " + stringTo,
+			args: args{
+				obj: func(s string) error { return nil },
+			},
+			wantOut: `func(string) error`,
+		},
+		{
+			name: "anonymous function2 > " + stringTo,
+			args: args{
+				obj: func(string) error { return nil },
+			},
+			wantOut: `func(string) error`,
+		},
+		{
+			name: "anonymous function3 > " + stringTo,
+			args: args{
+				obj: func(x string, y ...string) error { return nil },
+			},
+			wantOut: `func(string, ...string) error`,
+		},
+		{
+			name: "anonymous function3 > " + stringTo,
+			args: args{
+				obj: func(x string, y ...string) error { return nil },
+			},
+			wantOut: `func(string, ...string) error`,
+		},
+		{
+			name: "struct instance > " + stringTo,
+			args: args{
+				obj: Rect{X: 777, Y: 888},
+			},
+			wantOut: `{"X":777,"Y":888}`,
+		},
+		{
+			name: "struct instance pointer > " + stringTo,
+			args: args{
+				obj: &[]Rect{{X: 777, Y: 888}}[0],
+			},
+			wantOut: `{"X":777,"Y":888}`,
+		},
+		{
+			name: "struct instance slice > " + stringTo,
+			args: args{
+				obj: []Rect{{X: 777, Y: 888}, {X: 111, Y: 222}},
+			},
+			wantOut: `[{"X":777,"Y":888},{"X":111,"Y":222}]`,
+		},
+		{
+			name: "struct instance arr pointer > " + stringTo,
+			args: args{
+				obj: &[][]Rect{{{X: 777, Y: 888}, {X: 111, Y: 222}}}[0],
+			},
+			wantOut: `[{"X":777,"Y":888},{"X":111,"Y":222}]`,
+		},
+		{
+			name: "channel pointer > " + stringTo,
+			args: args{
+				obj: make(chan int),
+			},
+			wantReg: regexp.MustCompile("^0x[0-9a-f]+$"),
+		},
+		{
+			name: "byte slice > " + stringTo, //Golang json marshal will base64, we handle this as number array
+			args: args{
+				obj: []byte("byte to string"),
+			},
+			wantOut: `[98,121,116,101,32,116,111,32,115,116,114,105,110,103]`,
+		},
+		{
+			name: "byte array > " + stringTo,
+			args: args{
+				obj: [14]byte{98, 121, 116, 101, 32, 116, 111, 32, 115, 116, 114, 105, 110, 103}, //Golang json marshal will convert as number array
+			},
+			wantOut: `[98,121,116,101,32,116,111,32,115,116,114,105,110,103]`,
+		},
+		{
+			name: "string slice > " + stringTo, //Golang json marshal will base64, we handle this as number array
+			args: args{
+				obj: []string{"a", "b", "c"},
+			},
+			wantOut: `["a","b","c"]`,
+		},
+		{
+			name: "string array > " + stringTo,
+			args: args{
+				obj: [3]string{"a", "b", "c"},
+			},
+			wantOut: `["a","b","c"]`,
+		},
 	}
 	for _, tt := range stringTests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -2374,7 +2571,11 @@ func TestTo(t *testing.T) {
 				t.Errorf("To() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			if !reflect.DeepEqual(gotOut, tt.wantOut) {
+			if tt.wantReg != nil {
+				if !tt.wantReg.Match([]byte(gotOut)) {
+					t.Errorf("To() gotOut = %v %v, wantReg %v", gotOut, reflect.TypeOf(gotOut), tt.wantReg)
+				}
+			} else if !reflect.DeepEqual(gotOut, tt.wantOut) {
 				t.Errorf("To() gotOut = %v %v, want %v %v", gotOut, reflect.TypeOf(gotOut), tt.wantOut, reflect.TypeOf(tt.wantOut))
 			}
 		})
@@ -2404,6 +2605,106 @@ func TestTo(t *testing.T) {
 			gotOut, err := To[other](tt.args.obj)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("To() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotOut, tt.wantOut) {
+				t.Errorf("To() gotOut = %v %v, want %v %v", gotOut, reflect.TypeOf(gotOut), tt.wantOut, reflect.TypeOf(tt.wantOut))
+			}
+		})
+	}
+
+	const errorTo = "error"
+	errorTests := []testCase[error]{
+		{
+			name: "string > " + errorTo,
+			args: args{
+				obj: "error message",
+			},
+			wantOut: errors.New("error message"),
+		},
+		{
+			name: "complex64 > " + errorTo,
+			args: args{
+				obj: complex(float32(77), float32(0)),
+			},
+			wantOut: errors.New("(77+0i)"),
+		},
+	}
+	for _, tt := range errorTests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotOut, err := To[error](tt.args.obj)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("To() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotOut.Error() != tt.wantOut.Error() {
+				t.Errorf("To() gotOut = %v %v, want %v %v", gotOut, reflect.TypeOf(gotOut), tt.wantOut, reflect.TypeOf(tt.wantOut))
+			}
+		})
+	}
+
+	const uintptrTo = "uintptr"
+	uintptrTests := []testCase[uintptr]{
+		{
+			name: "int > " + uintptrTo,
+			args: args{
+				obj: 77,
+			},
+			wantOut: 0,
+			wantErr: true,
+		},
+	}
+	for _, tt := range uintptrTests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotOut, err := To[uintptr](tt.args.obj)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("To() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotOut, tt.wantOut) {
+				t.Errorf("To() gotOut = %v %v, want %v %v", gotOut, reflect.TypeOf(gotOut), tt.wantOut, reflect.TypeOf(tt.wantOut))
+			}
+		})
+	}
+
+	const structTo = "struct"
+	structTests := []testCase[Rect]{
+		{
+			name: "string > " + structTo,
+			args: args{
+				obj: `{"X":777,"Y":888}`,
+			},
+			wantOut: Rect{X: 777, Y: 888},
+		},
+	}
+	for _, tt := range structTests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotOut, err := To[Rect](tt.args.obj)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("To() struct = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotOut, tt.wantOut) {
+				t.Errorf("To() gotOut = %v %v, want %v %v", gotOut, reflect.TypeOf(gotOut), tt.wantOut, reflect.TypeOf(tt.wantOut))
+			}
+		})
+	}
+
+	const structPointerTo = "structPointer"
+	structPointerTests := []testCase[*Rect]{
+		{
+			name: "string > " + structPointerTo,
+			args: args{
+				obj: `{"X":777,"Y":888}`,
+			},
+			wantOut: &Rect{X: 777, Y: 888},
+		},
+	}
+	for _, tt := range structPointerTests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotOut, err := To[*Rect](tt.args.obj)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("To() structPointer = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotOut, tt.wantOut) {
@@ -2481,4 +2782,59 @@ func TestToForce(t *testing.T) {
 			}
 		})
 	}
+}
+
+func Test_getFuncBodyString(t *testing.T) {
+	_, filename, _, _ := runtime.Caller(0)
+	_, fs := getFuncAST("Test_getFuncBodyString", filename)
+	type args struct {
+		f  any
+		fs *token.FileSet
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "panic test",
+			args: args{
+				f:  "improper node type",
+				fs: fs,
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			defer func() { _ = recover() }()
+			getFuncBodyString(tt.args.f, tt.args.fs)
+			t.Errorf("The code did not panic")
+		})
+	}
+}
+
+type Shape interface {
+	area() float64
+	area2() float64
+}
+type Rect struct {
+	X    float64
+	Y    float64
+	w, h float64
+}
+
+func (r Rect) area() float64 {
+	return r.w * r.h
+}
+
+func (r *Rect) area2() float64 {
+	return r.w * r.h
+}
+
+func (r *Rect) area3() float64 {
+	return r.w * r.h
+}
+
+func func1() {
+	fmt.Println("func1 body")
 }

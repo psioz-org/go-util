@@ -67,7 +67,6 @@ func PrintContextInternals(ctx interface{}, inner bool) {
 	if !inner {
 		fmt.Printf("\n-----Fields for %s.%s-----\n", contextKeys.PkgPath(), contextKeys.Name())
 	}
-
 	if contextKeys.Kind() == reflect.Struct {
 		for i := 0; i < contextValues.NumField(); i++ {
 			reflectValue := contextValues.Field(i)
@@ -119,11 +118,7 @@ func ToCrc32(v interface{}) string {
 func ToJson(obj interface{}, indent string) string {
 	var bs []byte
 	if indent != "" {
-		// var err error
 		bs, _ = json.MarshalIndent(obj, "", indent)
-		// if err != nil {
-		// 	fmt.Printf("ToJsonErr: %v", err.Error())
-		// }
 	} else {
 		bs, _ = json.Marshal(obj)
 	}

@@ -409,12 +409,12 @@ func TestToJson(t *testing.T) {
 			want: "{\n\t\"a\": 7,\n\t\"b\": \"8\",\n\t\"c\": true,\n\t\"d\": null\n}",
 		},
 		{
-			name: "map[string]interface{} with zz indent",
+			name: "map[string]interface{} with xyz indent",
 			args: args{
 				obj:    map[string]interface{}{"a": 7, "b": "8", "c": true, "d": nil},
-				indent: "zz",
+				indent: "xyz",
 			},
-			want: "{\nzz\"a\": 7,\nzz\"b\": \"8\",\nzz\"c\": true,\nzz\"d\": null\n}",
+			want: "{\nxyz\"a\": 7,\nxyz\"b\": \"8\",\nxyz\"c\": true,\nxyz\"d\": null\n}",
 		},
 		{
 			name: "map[string]interface{} without indent",
