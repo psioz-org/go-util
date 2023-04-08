@@ -54,6 +54,75 @@ func Ternary[T any](b bool, vt T, vf T) T {
 	return vf
 }
 
+func toBool(obj any) any {
+	s := str(obj)
+	switch s {
+	case "", "<nil>": //Custom to false instead of error
+		return false
+	default:
+		if v, err := strconv.ParseBool(s); err == nil {
+			return v
+		}
+		return true
+	}
+}
+
+func toString(obj any) (v any) {
+	//case func(),struct{} match nothing even using before interface{}. interface{} match map,struct{},error,any (e.g. int also match) so it's not useful
+	switch objV := obj.(type) {
+	case nil, bool, complex64, complex128, float32, float64, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, string:
+		v = fmt.Sprintf("%v", obj)
+	case error:
+		v = objV.Error()
+	case []byte:
+		// Can't convert to array because len must be constant so we change type
+		objBs := make([]uint16, len(objV))
+		for i1, v1 := range objV {
+			objBs[i1] = uint16(v1)
+		}
+		v = stringz.ToJson(objBs, "")
+	default: //any=interface{}. []any will match only []interface{} (also slice only, not array). The same as map[any]any.
+		rv := reflect.ValueOf(obj)
+		switch rv.Kind() {
+		case reflect.Array, reflect.Map, reflect.Slice: //Beware marshal of byte slice will be base64, we handle above
+			v = stringz.ToJson(obj, "")
+		case reflect.Func:
+			if v = getFuncBodyString(getFuncAST(getFuncInfo(obj))); v == "" {
+				v = fmt.Sprintf("%T", obj)
+			}
+		case reflect.Struct: //match struct{} (instance)
+			v = stringz.ToJson(obj, "")
+		default: //reflect.Interface cant be send as param
+			if v = stringz.ToJson(obj, ""); v == "" {
+				v = fmt.Sprintf("%+v", obj)
+			}
+		}
+	}
+	return
+}
+
+func toObject[T any](obj any, out T) (v interface{}, err error) {
+	s := str(obj)
+	switch any(&out).(type) {
+	case *error: //Unlike other instance, "out error" starts with nil so any(out).(type) = nil. We still can check pointer.
+		v = errors.New(s)
+	default:
+		if s == "" {
+			v = out
+			return
+		}
+		if s == "<nil>" {
+			s = "null"
+		}
+		if err = json.Unmarshal([]byte(s), &out); err != nil {
+			err = fmt.Errorf("fail cast to result type %v, from %v: %v", reflect.TypeOf(&out), reflect.TypeOf(obj), obj)
+		} else {
+			v = out
+		}
+	}
+	return
+}
+
 func To[T any](obj interface{}) (out T, err error) {
 	if v, ok := obj.(T); ok {
 		return v, nil
@@ -66,16 +135,7 @@ func To[T any](obj interface{}) (out T, err error) {
 
 	switch any(out).(type) {
 	case bool:
-		s := str(obj)
-		switch s {
-		case "", "<nil>": //Custom to false instead of error
-			v = false
-		default:
-			if v, err = strconv.ParseBool(s); err != nil {
-				err = nil
-				v = true
-			}
-		}
+		v = toBool(obj)
 	case complex64:
 		vc128, err = strconv.ParseComplex(str(obj), 64)
 		v = complex64(vc128)
@@ -115,56 +175,11 @@ func To[T any](obj interface{}) (out T, err error) {
 	case uint64:
 		v, err = strconv.ParseUint(str(obj), 10, 64)
 	case string:
-		//case func(),struct{} match nothing even using before interface{}. interface{} match map,struct{},error,any (e.g. int also match) so it's not useful
-		switch objV := obj.(type) {
-		case nil, bool, complex64, complex128, float32, float64, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, string:
-			v = fmt.Sprintf("%v", obj)
-		case error:
-			v = objV.Error()
-		case []byte:
-			// Can't convert to array because len must be constant so we change type
-			objBs := make([]uint16, len(objV))
-			for i1, v1 := range objV {
-				objBs[i1] = uint16(v1)
-			}
-			v = stringz.ToJson(objBs, "")
-		default: //any=interface{}. []any will match only []interface{} (also slice only, not array). The same as map[any]any.
-			rv := reflect.ValueOf(obj)
-			switch rv.Kind() {
-			case reflect.Array, reflect.Map, reflect.Slice: //Beware marshal of byte slice will be base64, we handle above
-				v = stringz.ToJson(obj, "")
-			case reflect.Func:
-				if v = getFuncBodyString(getFuncAST(getFuncInfo(obj))); v == "" {
-					v = fmt.Sprintf("%T", obj)
-				}
-			case reflect.Struct: //match struct{} (instance)
-				v = stringz.ToJson(obj, "")
-			default: //reflect.Interface cant be send as param
-				if v = stringz.ToJson(obj, ""); v == "" {
-					v = fmt.Sprintf("%+v", obj)
-				}
-			}
-		}
+		v = toString(obj)
 	case uintptr: //Can't be default, will error with Unmarshal "&out"
 		err = fmt.Errorf("fail cast to result type %v, from %v: %v", reflect.TypeOf(&out), reflect.TypeOf(obj), obj)
 	default: //case nil (error)&case <no match> (any instance). We ignore uintptr
-		s := str(obj)
-		switch any(&out).(type) {
-		case *error: //Unlike other instance, "out error" starts with nil so any(out).(type) = nil. We still can check pointer.
-			v = errors.New(s)
-		default:
-			if s == "" {
-				return
-			}
-			if s == "<nil>" {
-				s = "null"
-			}
-			if err = json.Unmarshal([]byte(s), &out); err != nil {
-				err = fmt.Errorf("fail cast to result type %v, from %v: %v", reflect.TypeOf(&out), reflect.TypeOf(obj), obj)
-			} else {
-				v = out
-			}
-		}
+		v, err = toObject(obj, out)
 	}
 	if err == nil {
 		out = v.(T) //We don't check ok, to make sure not assign invalid type to v and always set err if error
@@ -204,36 +219,42 @@ func getFuncInfo(f interface{}) (name, file string) {
 	return
 }
 
-func getFuncAST(funcname, filename string) (*ast.FuncDecl, *token.FileSet) {
+func getFuncAST(funcname, filename string) (_ *ast.FuncDecl, _ *token.FileSet) {
 	//Note function from object instance did not return file and line in new golang version
 	//We still handle in case it's back as old behavior
 	if filename == "<autogenerated>" {
-		return nil, nil
+		return
 	}
 	fs := token.NewFileSet()
 	funcname = "." + funcname
-	if file, err := parser.ParseFile(fs, filename, nil, 0); err == nil {
-		for _, d := range file.Decls {
-			if f, ok := d.(*ast.FuncDecl); ok && strings.HasSuffix(funcname, "."+f.Name.Name) {
-				if f.Recv == nil {
-					return f, fs
-				}
-				for _, l := range f.Recv.List { // fn is *ast.FuncDecl
-					fullname := ""
-					switch vToken := l.Type.(type) {
-					case *ast.StarExpr:
-						fullname = fmt.Sprintf(".(*%v).%v", vToken.X, f.Name.Name)
-					case *ast.Ident:
-						fullname = fmt.Sprintf(".%v.%v", vToken.Name, f.Name.Name)
-					}
-					if fullname != "" && fullname == funcname {
-						return f, fs
-					}
-				}
+	var file *ast.File
+	var err error
+	if file, err = parser.ParseFile(fs, filename, nil, 0); err != nil {
+		return
+	}
+	for _, d := range file.Decls {
+		var f *ast.FuncDecl
+		var ok bool
+		if f, ok = d.(*ast.FuncDecl); !ok || !strings.HasSuffix(funcname, "."+f.Name.Name) {
+			continue
+		}
+		if f.Recv == nil {
+			return f, fs
+		}
+		for _, l := range f.Recv.List { // fn is *ast.FuncDecl
+			var fullname string
+			switch vToken := l.Type.(type) {
+			case *ast.StarExpr:
+				fullname = fmt.Sprintf(".(*%v).%v", vToken.X, f.Name.Name)
+			case *ast.Ident:
+				fullname = fmt.Sprintf(".%v.%v", vToken.Name, f.Name.Name)
+			}
+			if fullname == funcname {
+				return f, fs
 			}
 		}
 	}
-	return nil, nil
+	return
 }
 
 func getFuncBodyString(f any, fs *token.FileSet) string {
