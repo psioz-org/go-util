@@ -117,7 +117,7 @@ func To[T any](obj interface{}) (out T, err error) {
 	case string:
 		//case func(),struct{} match nothing even using before interface{}. interface{} match map,struct{},error,any (e.g. int also match) so it's not useful
 		switch objV := obj.(type) {
-		case bool, complex64, complex128, float32, float64, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, string:
+		case nil, bool, complex64, complex128, float32, float64, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, string:
 			v = fmt.Sprintf("%v", obj)
 		case error:
 			v = objV.Error()
@@ -148,11 +148,15 @@ func To[T any](obj interface{}) (out T, err error) {
 	case uintptr: //Can't be default, will error with Unmarshal "&out"
 		err = fmt.Errorf("fail cast to result type %v, from %v: %v", reflect.TypeOf(&out), reflect.TypeOf(obj), obj)
 	default: //case nil (error)&case <no match> (any instance). We ignore uintptr
+		s := str(obj)
 		switch any(&out).(type) {
 		case *error: //Unlike other instance, "out error" starts with nil so any(out).(type) = nil. We still can check pointer.
-			v = errors.New(str(obj))
+			v = errors.New(s)
 		default:
-			if err = json.Unmarshal([]byte(str(obj)), &out); err != nil {
+			if s == "<nil>" {
+				s = "null"
+			}
+			if err = json.Unmarshal([]byte(s), &out); err != nil {
 				err = fmt.Errorf("fail cast to result type %v, from %v: %v", reflect.TypeOf(&out), reflect.TypeOf(obj), obj)
 			} else {
 				v = out
