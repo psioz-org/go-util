@@ -7,6 +7,7 @@ import (
 )
 
 func TestGetVersionAsInteger(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		version string
 	}
@@ -96,6 +97,7 @@ func TestGetVersionAsInteger(t *testing.T) {
 }
 
 func TestIndexOfNth(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		s      string
 		substr string
@@ -195,6 +197,7 @@ func (c contextKey) String() string {
 }
 
 func TestPrintContextInternals(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		ctx   interface{}
 		inner bool
@@ -226,6 +229,7 @@ func TestPrintContextInternals(t *testing.T) {
 }
 
 func TestReplaceAllStringSubmatchFunc(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		re   *regexp.Regexp
 		str  string
@@ -280,6 +284,7 @@ func TestReplaceAllStringSubmatchFunc(t *testing.T) {
 }
 
 func TestSnake2Title(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		s string
 	}
@@ -327,6 +332,7 @@ func TestSnake2Title(t *testing.T) {
 }
 
 func TestToCrc32(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		v interface{}
 	}
@@ -367,6 +373,7 @@ func TestToCrc32(t *testing.T) {
 }
 
 func TestToJson(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		obj    interface{}
 		indent string

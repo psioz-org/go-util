@@ -6,6 +6,7 @@ import (
 )
 
 func TestJoin(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		out          map[string]string
 		excludeEmpty bool
@@ -17,7 +18,7 @@ func TestJoin(t *testing.T) {
 		want map[string]string
 	}{
 		{
-			name: "case 1",
+			name: "excludeEmpty false",
 			args: args{
 				out:          map[string]string{"a": "1", "b": "2"},
 				excludeEmpty: false,
@@ -35,7 +36,7 @@ func TestJoin(t *testing.T) {
 			want: map[string]string{"a": "1", "b": "2", "c": "", "d": "4", "e": "5"},
 		},
 		{
-			name: "case 1",
+			name: "excludeEmpty true",
 			args: args{
 				out:          map[string]string{"a": "1", "b": "2"},
 				excludeEmpty: true,
@@ -64,6 +65,7 @@ func TestJoin(t *testing.T) {
 }
 
 func TestToMap(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		obj interface{}
 	}
@@ -144,6 +146,7 @@ func TestToMap(t *testing.T) {
 }
 
 func TestToStringMap(t *testing.T) {
+	t.Parallel()
 	type args struct {
 		obj interface{}
 	}

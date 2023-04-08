@@ -8,6 +8,7 @@ import (
 )
 
 func TestRootDir(t *testing.T) {
+	t.Parallel()
 	_, b, _, _ := runtime.Caller(0)
 	d := path.Join(path.Dir(b))
 	root := filepath.Dir(filepath.Dir(d))
