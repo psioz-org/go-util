@@ -45,7 +45,7 @@ func (r *Rect) area3() float64 {
 }
 
 func func1() {
-	fmt.Println("func1 body")
+	fmt.Sprintln("func1 body")
 }
 
 func TestGetItemTestGeneric(t *testing.T) {
@@ -2416,7 +2416,7 @@ func TestTo(t *testing.T) {
 				obj: func1,
 			},
 			wantOut: `func func1() {
-	fmt.Println("func1 body")
+	fmt.Sprintln("func1 body")
 }`,
 		},
 		{
