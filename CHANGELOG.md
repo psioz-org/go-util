@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/zev-zakaryan/go-util/compare/v1.2.0...v1.2.1) (2023-04-11)
+
+
+### Bug Fixes
+
+* remove dependency ([e908c80](https://github.com/zev-zakaryan/go-util/commit/e908c80dd6b0baec4b06383d94f2520401952748))
+
 ## [1.2.0](https://github.com/zev-zakaryan/go-util/compare/v1.1.0...v1.2.0) (2023-04-11)
 
 
