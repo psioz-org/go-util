@@ -9,9 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"unsafe"
-
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 )
 
 func GetVersionAsInteger(version string) string {
@@ -106,9 +103,12 @@ func ReplaceAllStringSubmatchFunc(re *regexp.Regexp, str string, repl func([]str
 }
 
 func Snake2Title(s string) string {
-	m1 := regexp.MustCompile(`_+`)
+	mUs := regexp.MustCompile(`_+`)
+	mC1 := regexp.MustCompile(`(^|\s)\w`)
 
-	return cases.Title(language.English).String(m1.ReplaceAllLiteralString(strings.Trim(s, "_"), " "))
+	return mC1.ReplaceAllStringFunc(mUs.ReplaceAllLiteralString(strings.Trim(s, "_"), " "), func(w string) string {
+		return strings.ToUpper(w)
+	})
 }
 
 func ToCrc32(v interface{}) string {
