@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.2.0](https://github.com/zev-zakaryan/go-util/compare/v1.1.0...v1.2.0) (2023-04-11)
+
+
+### Features
+
+* add autoupdate to test autoupdate ([8305c5a](https://github.com/zev-zakaryan/go-util/commit/8305c5a2cb4a9571df8ad068fac4df6e92b35ac3))
+* parallel test ([bd5b219](https://github.com/zev-zakaryan/go-util/commit/bd5b2199a6fc61268d8bfa95d6bf61e4a012ce5a))
+* remove dependency ([15ccd98](https://github.com/zev-zakaryan/go-util/commit/15ccd982c7f0eb2b68e856724a9b447087502ba8))
+
+
+### Bug Fixes
+
+* decrease complexity ([7ab3a42](https://github.com/zev-zakaryan/go-util/commit/7ab3a42a216b6ea6619e4a5006990521071111ad))
+
 ## [1.1.0](https://github.com/zev-zakaryan/go-util/compare/v1.0.0...v1.1.0) (2023-04-08)
 
 
