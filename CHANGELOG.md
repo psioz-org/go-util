@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3](https://github.com/psioz-org/go-util/compare/v1.2.2...v1.2.3) (2023-10-16)
+
+
+### Bug Fixes
+
+* no sonar bot message ([4291806](https://github.com/psioz-org/go-util/commit/4291806836a11b053502ee6f2837d6f3a772ac6a))
+
 ## [1.2.2](https://github.com/psioz-org/go-util/compare/v1.2.1...v1.2.2) (2023-10-16)
 
 
