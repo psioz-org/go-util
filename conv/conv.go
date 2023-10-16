@@ -181,7 +181,7 @@ func To[T any](obj interface{}) (out T, err error) {
 	default: //case nil (error)&case <no match> (any instance). We ignore uintptr
 		v, err = toObject(obj, out)
 	}
-	if err == nil {
+	if err == nil && v != nil { //cant cast v=nil to (any), just dont set
 		out = v.(T) //We don't check ok, to make sure not assign invalid type to v and always set err if error
 	}
 	return

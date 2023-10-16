@@ -195,6 +195,18 @@ func TestGetItem(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
+		{
+			name: "get nil for non-exists",
+			args: args{
+				obj: map[string]interface{}{
+					"x": map[string]interface{}{},
+				},
+				keys: "x/y",
+				sep:  "/",
+			},
+			want:    nil,
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -2822,6 +2834,64 @@ func TestTo(t *testing.T) {
 			gotOut, err := To[map[string]interface{}](tt.args.obj)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("To() map[string]interface{} = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotOut, tt.wantOut) {
+				t.Errorf("To() gotOut = %v %v, want %v %v", gotOut, reflect.TypeOf(gotOut), tt.wantOut, reflect.TypeOf(tt.wantOut))
+			}
+		})
+	}
+
+	const anyTo = "map"
+	anyTests := []testCase[any]{
+		{
+			name: "string > " + anyTo,
+			args: args{
+				obj: jsonFullCheckMapStr,
+			},
+			wantOut: jsonFullCheckMapStr,
+		},
+		{
+			name: "string null > " + anyTo,
+			args: args{
+				obj: `null`,
+			},
+			wantOut: `null`,
+		},
+		{
+			name: "string nil > " + anyTo,
+			args: args{
+				obj: `<nil>`,
+			},
+			wantOut: `<nil>`,
+		},
+		{
+			name: "string empty > " + anyTo,
+			args: args{
+				obj: ``,
+			},
+			wantOut: ``,
+		},
+		{
+			name: "string empty obj > " + anyTo,
+			args: args{
+				obj: `{}`,
+			},
+			wantOut: `{}`,
+		},
+		{
+			name: "nil obj > " + anyTo,
+			args: args{
+				obj: nil,
+			},
+			wantOut: nil,
+		},
+	}
+	for _, tt := range anyTests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotOut, err := To[any](tt.args.obj)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("To() any = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotOut, tt.wantOut) {
