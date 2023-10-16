@@ -25,10 +25,11 @@ jobs:
           go-version: 'stable'
       - run: go version
       - run: go mod tidy
+      - run: go test ./...
       - name: Run Test
         # In windows -coverprofile= not work, must be space so we use space here too as compatible for both os, now non-windows need =
         run: |
-          go test -v -json ./... -covermode count -coverprofile coverage.out > coverage-report.json
+          go test -json ./... -covermode count -coverprofile coverage.out > coverage-report.json
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
         env:
