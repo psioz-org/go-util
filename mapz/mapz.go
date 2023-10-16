@@ -6,10 +6,21 @@ import (
 	"github.com/zev-zakaryan/go-util/conv"
 )
 
-func Join(out map[string]string, excludeEmpty bool, in ...map[string]string) {
+func Join[TKey comparable, TVal comparable](out map[TKey]TVal, excludeEmpty bool, in ...map[TKey]TVal) {
+	var empty TVal
 	for _, in1 := range in {
 		for k, v := range in1 {
-			if _, ok := out[k]; !ok && (!excludeEmpty || v != "") {
+			if _, ok := out[k]; !ok && (!excludeEmpty || v != empty) {
+				out[k] = v
+			}
+		}
+	}
+}
+
+func JoinAny[TKey comparable, TVal any](out map[TKey]TVal, in ...map[TKey]TVal) {
+	for _, in1 := range in {
+		for k, v := range in1 {
+			if _, ok := out[k]; !ok {
 				out[k] = v
 			}
 		}
