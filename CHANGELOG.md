@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/psioz-org/go-util/compare/v1.2.3...v1.3.0) (2023-10-16)
+
+
+### Features
+
+* add join any ([7e7b6b5](https://github.com/psioz-org/go-util/commit/7e7b6b5904a88e2e6a720a7d3015d64a76a9cce0))
+
 ## [1.2.3](https://github.com/psioz-org/go-util/compare/v1.2.2...v1.2.3) (2023-10-16)
 
 
