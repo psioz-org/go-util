@@ -58,7 +58,108 @@ func TestJoin(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			Join(tt.args.out, tt.args.excludeEmpty, tt.args.in...)
 			if !reflect.DeepEqual(tt.args.out, tt.want) {
-				t.Errorf("CloneCast() = %v, want %v", tt.args.out, tt.want)
+				t.Errorf("Join() = %v, want %v", tt.args.out, tt.want)
+			}
+		})
+	}
+}
+
+func TestJoinMix(t *testing.T) {
+	t.Parallel()
+	type args struct {
+		out          map[string]any
+		excludeEmpty bool
+		in           []map[string]any
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]any
+	}{
+		{
+			name: "excludeEmpty false",
+			args: args{
+				out:          map[string]any{"a": "1", "b": 2},
+				excludeEmpty: false,
+				in: []map[string]any{
+					{
+						"b": "3",
+						"c": "",
+					},
+					{
+						"d": "4",
+						"e": 5.5,
+					},
+				},
+			},
+			want: map[string]any{"a": "1", "b": 2, "c": "", "d": "4", "e": 5.5},
+		},
+		{
+			name: "excludeEmpty true, nil is not empty for any",
+			args: args{
+				out:          map[string]any{"a": "1", "b": 2},
+				excludeEmpty: false,
+				in: []map[string]any{
+					{
+						"b": "3",
+						"c": "",
+					},
+					{
+						"d": "4",
+						"e": 5.5,
+						"f": nil,
+					},
+				},
+			},
+			want: map[string]any{"a": "1", "b": 2, "c": "", "d": "4", "e": 5.5, "f": nil},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			Join(tt.args.out, tt.args.excludeEmpty, tt.args.in...)
+			if !reflect.DeepEqual(tt.args.out, tt.want) {
+				t.Errorf("Join() = %v, want %v", tt.args.out, tt.want)
+			}
+		})
+	}
+}
+
+func TestJoinAny(t *testing.T) {
+	t.Parallel()
+	type args struct {
+		out          map[string]any
+		excludeEmpty bool
+		in           []map[string]any
+	}
+	tests := []struct {
+		name string
+		args args
+		want map[string]any
+	}{
+		{
+			name: "full",
+			args: args{
+				out:          map[string]any{"a": "1", "b": 2},
+				excludeEmpty: false,
+				in: []map[string]any{
+					{
+						"b": "3",
+						"c": "",
+					},
+					{
+						"d": "4",
+						"e": 5.5,
+					},
+				},
+			},
+			want: map[string]any{"a": "1", "b": 2, "c": "", "d": "4", "e": 5.5},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			JoinAny(tt.args.out, tt.args.in...)
+			if !reflect.DeepEqual(tt.args.out, tt.want) {
+				t.Errorf("JoinAny() = %v, want %v", tt.args.out, tt.want)
 			}
 		})
 	}
