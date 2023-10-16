@@ -4,11 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/crc32"
-	"reflect"
 	"regexp"
 	"strconv"
 	"strings"
-	"unsafe"
 )
 
 func GetVersionAsInteger(version string) string {
@@ -57,31 +55,32 @@ func IndexOfNth(s string, substr string, nth int) int {
 	return out
 }
 
-func PrintContextInternals(ctx interface{}, inner bool) {
-	contextValues := reflect.ValueOf(ctx).Elem()
-	contextKeys := reflect.TypeOf(ctx).Elem()
+// Print context is fail in go 1.21.3, we rarely use it so removed
+// func PrintContextInternals(ctx interface{}, inner bool) {
+// 	contextValues := reflect.ValueOf(ctx).Elem()
+// 	contextKeys := reflect.TypeOf(ctx).Elem()
 
-	if !inner {
-		fmt.Printf("\n-----Fields for %s.%s-----\n", contextKeys.PkgPath(), contextKeys.Name())
-	}
-	if contextKeys.Kind() == reflect.Struct {
-		for i := 0; i < contextValues.NumField(); i++ {
-			reflectValue := contextValues.Field(i)
-			reflectValue = reflect.NewAt(reflectValue.Type(), unsafe.Pointer(reflectValue.UnsafeAddr())).Elem()
+// 	if !inner {
+// 		fmt.Printf("\n-----Fields for %s.%s-----\n", contextKeys.PkgPath(), contextKeys.Name())
+// 	}
+// 	if contextKeys.Kind() == reflect.Struct {
+// 		for i := 0; i < contextValues.NumField(); i++ {
+// 			reflectValue := contextValues.Field(i)
+// 			reflectValue = reflect.NewAt(reflectValue.Type(), unsafe.Pointer(reflectValue.UnsafeAddr())).Elem()
 
-			reflectField := contextKeys.Field(i)
+// 			reflectField := contextKeys.Field(i)
 
-			if reflectField.Name == "Context" {
-				PrintContextInternals(reflectValue.Interface(), true)
-			} else {
-				fmt.Printf("%+v > %+v\n", reflectField.Name, reflectValue.Interface())
-			}
-		}
-		fmt.Printf("-----context end-----\n")
-	} else {
-		fmt.Printf("-----context is empty (int)-----\n")
-	}
-}
+// 			if reflectField.Name == "Context" {
+// 				PrintContextInternals(reflectValue.Interface(), true)
+// 			} else {
+// 				fmt.Printf("%+v > %+v\n", reflectField.Name, reflectValue.Interface())
+// 			}
+// 		}
+// 		fmt.Printf("-----context end-----\n")
+// 	} else {
+// 		fmt.Printf("-----context is empty (int)-----\n")
+// 	}
+// }
 
 func ReplaceAllStringSubmatchFunc(re *regexp.Regexp, str string, repl func([]string) string) string {
 	result := ""
