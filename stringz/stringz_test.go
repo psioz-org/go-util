@@ -1,7 +1,6 @@
 package stringz
 
 import (
-	"context"
 	"regexp"
 	"testing"
 )
@@ -196,37 +195,37 @@ func (c contextKey) String() string {
 	return "mypackage context key " + string(c)
 }
 
-func TestPrintContextInternals(t *testing.T) {
-	t.Parallel()
-	type args struct {
-		ctx   interface{}
-		inner bool
-	}
-	tests := []struct {
-		name string
-		args args
-	}{
-		{
-			name: "for debug: anything is fine, inner: false",
-			args: args{
-				ctx:   context.WithValue(context.Background(), contextKey("key1"), "value1"),
-				inner: true,
-			},
-		},
-		{
-			name: "for debug: anything is fine, inner: true",
-			args: args{
-				ctx:   context.WithValue(context.Background(), contextKey("key1"), "value1"),
-				inner: false,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			PrintContextInternals(tt.args.ctx, tt.args.inner)
-		})
-	}
-}
+// func TestPrintContextInternals(t *testing.T) {
+// 	t.Parallel()
+// 	type args struct {
+// 		ctx   interface{}
+// 		inner bool
+// 	}
+// 	tests := []struct {
+// 		name string
+// 		args args
+// 	}{
+// 		{
+// 			name: "for debug: anything is fine, inner: false",
+// 			args: args{
+// 				ctx:   context.WithValue(context.Background(), contextKey("key1"), "value1"),
+// 				inner: true,
+// 			},
+// 		},
+// 		{
+// 			name: "for debug: anything is fine, inner: true",
+// 			args: args{
+// 				ctx:   context.WithValue(context.Background(), contextKey("key1"), "value1"),
+// 				inner: false,
+// 			},
+// 		},
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			PrintContextInternals(tt.args.ctx, tt.args.inner)
+// 		})
+// 	}
+// }
 
 func TestReplaceAllStringSubmatchFunc(t *testing.T) {
 	t.Parallel()

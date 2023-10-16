@@ -24,7 +24,7 @@ jobs:
         with:
           go-version: 'stable'
       - run: go version
-      - run: go mod tidy
+      # To view error, go test ... > coverage-report.json dont show error so we double execute this. Why not only check on local? Because we found go 1.21.3 make go 1.20 (local) code error.
       - run: go test ./...
       - name: Run Test
         # In windows -coverprofile= not work, must be space so we use space here too as compatible for both os, now non-windows need =
