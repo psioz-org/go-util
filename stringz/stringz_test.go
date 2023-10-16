@@ -189,11 +189,11 @@ func TestIndexOfNth(t *testing.T) {
 	}
 }
 
-type contextKey string
+// type contextKey string
 
-func (c contextKey) String() string {
-	return "mypackage context key " + string(c)
-}
+// func (c contextKey) String() string {
+// 	return "mypackage context key " + string(c)
+// }
 
 // func TestPrintContextInternals(t *testing.T) {
 // 	t.Parallel()
