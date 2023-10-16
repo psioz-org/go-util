@@ -32,6 +32,9 @@ jobs:
           go test -v -json ./... -covermode count -coverprofile coverage.out > coverage-report.json
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@master
+        with: # Try fix no bot message: https://community.sonarsource.com/t/sonarcloud-code-analysis-expected-onoging-issues/28154/52
+          args: >
+            -Dsonar.scm.revision=${{ github.event.pull_request.head.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
