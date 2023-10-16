@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.2](https://github.com/psioz-org/go-util/compare/v1.2.1...v1.2.2) (2023-10-16)
+
+
+### Bug Fixes
+
+* cant go test ([c92127e](https://github.com/psioz-org/go-util/commit/c92127e39e4674da2dbd0fd503246e2f89fb07d1))
+* go test ([beed347](https://github.com/psioz-org/go-util/commit/beed34727e97e3239411f307e0ed94b8d6bb4ed7))
+* go test ([d128989](https://github.com/psioz-org/go-util/commit/d12898972ca9463afcf2c5ec98b8d9bdaf05302b))
+* nil case for any ([b07395b](https://github.com/psioz-org/go-util/commit/b07395bc24f2f1e7e04c1756cdc6c0a92eaae0c5))
+* remove unused ([35a0909](https://github.com/psioz-org/go-util/commit/35a0909cf7d13ac360ca68e47407da602d88b57f))
+* try return -v flag to test ([f669e8f](https://github.com/psioz-org/go-util/commit/f669e8fb700a366f26867c189a285fcfc8e445ae))
+* workflows go test error ([74848b2](https://github.com/psioz-org/go-util/commit/74848b25c6eb0aa25093d28afdd6a0d3ddaf9da6))
+
 ## [1.2.1](https://github.com/zev-zakaryan/go-util/compare/v1.2.0...v1.2.1) (2023-04-11)
 
 
