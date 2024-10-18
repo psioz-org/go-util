@@ -51,6 +51,138 @@ func func1() {
 	fmt.Sprintln("func1 body")
 }
 
+func BenchmarkGetItemTestGeneric(t *testing.B) {
+	for n := 0; n < t.N; n++ {
+		type args struct {
+			obj  any
+			keys string
+			sep  string
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    int
+			wantErr bool
+		}{
+			{
+				name: "test generic success",
+				args: args{
+					obj: map[string]any{
+						"x": map[string]any{
+							"y": map[string]any{
+								"z": 3,
+							},
+						},
+					},
+					keys: "x.y.z",
+					sep:  ".",
+				},
+				want: 3,
+			},
+			{
+				name: "test generic success array index",
+				args: args{
+					obj: map[string]any{
+						"x": map[string]any{
+							"y": []any{
+								1,
+								2,
+							},
+						},
+					},
+					keys: "x/y/1",
+					sep:  "/",
+				},
+				want: 2,
+			},
+			{
+				name: "test generic fail cast to result type",
+				args: args{
+					obj: map[string]any{
+						"x": map[string]any{
+							"y": map[string]any{
+								"z": "3.3",
+							},
+						},
+					},
+					keys: "x.y.z",
+					sep:  ".",
+				},
+				want:    0,
+				wantErr: true,
+			},
+		}
+		for _, tt := range tests {
+			GetItem[int](tt.args.obj, tt.args.keys, tt.args.sep)
+		}
+	}
+}
+func BenchmarkGetItem2TestGeneric(t *testing.B) {
+	for n := 0; n < t.N; n++ {
+		type args struct {
+			obj  any
+			keys string
+			sep  string
+		}
+		tests := []struct {
+			name    string
+			args    args
+			want    int
+			wantErr bool
+		}{
+			{
+				name: "test generic success",
+				args: args{
+					obj: map[string]any{
+						"x": map[string]any{
+							"y": map[string]any{
+								"z": 3,
+							},
+						},
+					},
+					keys: "x.y.z",
+					sep:  ".",
+				},
+				want: 3,
+			},
+			{
+				name: "test generic success array index",
+				args: args{
+					obj: map[string]any{
+						"x": map[string]any{
+							"y": []any{
+								1,
+								2,
+							},
+						},
+					},
+					keys: "x/y/1",
+					sep:  "/",
+				},
+				want: 2,
+			},
+			{
+				name: "test generic fail cast to result type",
+				args: args{
+					obj: map[string]any{
+						"x": map[string]any{
+							"y": map[string]any{
+								"z": "3.3",
+							},
+						},
+					},
+					keys: "x.y.z",
+					sep:  ".",
+				},
+				want:    0,
+				wantErr: true,
+			},
+		}
+		for _, tt := range tests {
+			GetItem2[int](tt.args.obj, tt.args.keys, tt.args.sep)
+		}
+	}
+}
 func TestGetItemTestGeneric(t *testing.T) {
 	t.Parallel()
 	type args struct {
@@ -125,7 +257,259 @@ func TestGetItemTestGeneric(t *testing.T) {
 		})
 	}
 }
+func TestGetItem2TestGeneric(t *testing.T) {
+	t.Parallel()
+	type args struct {
+		obj  any
+		keys string
+		sep  string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    int
+		wantErr bool
+	}{
+		{
+			name: "test generic success",
+			args: args{
+				obj: map[string]any{
+					"x": map[string]any{
+						"y": map[string]any{
+							"z": 3,
+						},
+					},
+				},
+				keys: "x.y.z",
+				sep:  ".",
+			},
+			want: 3,
+		},
+		{
+			name: "test generic success array index",
+			args: args{
+				obj: map[string]any{
+					"x": map[string]any{
+						"y": []any{
+							1,
+							2,
+						},
+					},
+				},
+				keys: "x/y/1",
+				sep:  "/",
+			},
+			want: 2,
+		},
+		{
+			name: "test generic fail cast to result type",
+			args: args{
+				obj: map[string]any{
+					"x": map[string]any{
+						"y": map[string]any{
+							"z": "3.3",
+						},
+					},
+				},
+				keys: "x.y.z",
+				sep:  ".",
+			},
+			want:    0,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetItem2[int](tt.args.obj, tt.args.keys, tt.args.sep)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetItem2() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetItem2() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
 
+func BenchmarkGetItem(t *testing.B) {
+	for n := 0; n < t.N; n++ {
+		type args struct {
+			obj  any
+			keys string
+			sep  string
+		}
+		type result struct{}
+		result1 := result{}
+		result2 := result{}
+		tests := []struct {
+			name    string
+			args    args
+			want    any
+			wantErr bool
+		}{
+			{
+				name: "test result success",
+				args: args{
+					obj: map[string]any{
+						"x": map[string]any{
+							"y": map[string]any{
+								"z": result1,
+							},
+						},
+					},
+					keys: "x/y/z",
+					sep:  "/",
+				},
+				want: result1,
+			},
+			{
+				name: "test result success array index",
+				args: args{
+					obj: map[string]any{
+						"x": map[string]any{
+							"y": []any{
+								result1,
+								result2,
+							},
+						},
+					},
+					keys: "x/y/1",
+					sep:  "/",
+				},
+				want: result2,
+			},
+			{
+				name: "fail cast to map to get key",
+				args: args{
+					obj: map[string]any{
+						"x": map[string]any{},
+					},
+					keys: "x/y/z",
+					sep:  "/",
+				},
+				want:    nil,
+				wantErr: true,
+			},
+			{
+				name: "fail cast to array to get key",
+				args: args{
+					obj: map[string]any{
+						"x": map[string]any{},
+					},
+					keys: "x/y/0",
+					sep:  "/",
+				},
+				want:    nil,
+				wantErr: true,
+			},
+			{
+				name: "get nil for non-exists",
+				args: args{
+					obj: map[string]any{
+						"x": map[string]any{},
+					},
+					keys: "x/y",
+					sep:  "/",
+				},
+				want:    nil,
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			GetItem[any](tt.args.obj, tt.args.keys, tt.args.sep)
+		}
+	}
+}
+func BenchmarkGetItem2(t *testing.B) {
+	for n := 0; n < t.N; n++ {
+		type args struct {
+			obj  any
+			keys string
+			sep  string
+		}
+		type result struct{}
+		result1 := result{}
+		result2 := result{}
+		tests := []struct {
+			name    string
+			args    args
+			want    any
+			wantErr bool
+		}{
+			{
+				name: "test result success",
+				args: args{
+					obj: map[string]any{
+						"x": map[string]any{
+							"y": map[string]any{
+								"z": result1,
+							},
+						},
+					},
+					keys: "x/y/z",
+					sep:  "/",
+				},
+				want: result1,
+			},
+			{
+				name: "test result success array index",
+				args: args{
+					obj: map[string]any{
+						"x": map[string]any{
+							"y": []any{
+								result1,
+								result2,
+							},
+						},
+					},
+					keys: "x/y/1",
+					sep:  "/",
+				},
+				want: result2,
+			},
+			{
+				name: "fail cast to map to get key",
+				args: args{
+					obj: map[string]any{
+						"x": map[string]any{},
+					},
+					keys: "x/y/z",
+					sep:  "/",
+				},
+				want:    nil,
+				wantErr: true,
+			},
+			{
+				name: "fail cast to array to get key",
+				args: args{
+					obj: map[string]any{
+						"x": map[string]any{},
+					},
+					keys: "x/y/0",
+					sep:  "/",
+				},
+				want:    nil,
+				wantErr: true,
+			},
+			{
+				name: "get nil for non-exists",
+				args: args{
+					obj: map[string]any{
+						"x": map[string]any{},
+					},
+					keys: "x/y",
+					sep:  "/",
+				},
+				want:    nil,
+				wantErr: false,
+			},
+		}
+		for _, tt := range tests {
+			GetItem2[any](tt.args.obj, tt.args.keys, tt.args.sep)
+		}
+	}
+}
 func TestGetItem(t *testing.T) {
 	t.Parallel()
 	type args struct {
@@ -219,6 +603,103 @@ func TestGetItem(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GetItem() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+func TestGetItem2(t *testing.T) {
+	t.Parallel()
+	type args struct {
+		obj  any
+		keys string
+		sep  string
+	}
+	type result struct{}
+	result1 := result{}
+	result2 := result{}
+	tests := []struct {
+		name    string
+		args    args
+		want    any
+		wantErr bool
+	}{
+		{
+			name: "test result success",
+			args: args{
+				obj: map[string]any{
+					"x": map[string]any{
+						"y": map[string]any{
+							"z": result1,
+						},
+					},
+				},
+				keys: "x/y/z",
+				sep:  "/",
+			},
+			want: result1,
+		},
+		{
+			name: "test result success array index",
+			args: args{
+				obj: map[string]any{
+					"x": map[string]any{
+						"y": []any{
+							result1,
+							result2,
+						},
+					},
+				},
+				keys: "x/y/1",
+				sep:  "/",
+			},
+			want: result2,
+		},
+		{
+			name: "fail cast to map to get key",
+			args: args{
+				obj: map[string]any{
+					"x": map[string]any{},
+				},
+				keys: "x/y/z",
+				sep:  "/",
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "fail cast to array to get key",
+			args: args{
+				obj: map[string]any{
+					"x": map[string]any{},
+				},
+				keys: "x/y/0",
+				sep:  "/",
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "get nil for non-exists",
+			args: args{
+				obj: map[string]any{
+					"x": map[string]any{},
+				},
+				keys: "x/y",
+				sep:  "/",
+			},
+			want:    nil,
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetItem2[any](tt.args.obj, tt.args.keys, tt.args.sep)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetItem2() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetItem2() = %v, want %v", got, tt.want)
 			}
 		})
 	}
