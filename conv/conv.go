@@ -75,6 +75,64 @@ func getKeys(mapKeys []reflect.Value) (mKeys []string) {
 	return
 }
 
+func getItemsSlice(obj any, keys []string, out *[]any, opts map[Option]struct{}, key string) {
+	sl := reflect.ValueOf(obj)
+	if key == "#" || key == "#v" {
+		for i := 0; i < sl.Len(); i++ {
+			getItems(sl.Index(i).Interface(), keys, out, opts)
+		}
+		return
+	}
+	if key == "#k" {
+		for i := 0; i < sl.Len(); i++ {
+			getItems(i, keys, out, opts)
+		}
+		return
+	}
+	if i, err := strconv.Atoi(key); err == nil && i < sl.Len() {
+		getItems(sl.Index(i).Interface(), keys, out, opts)
+	} else if len(keys) == 0 { //get null for final missing by default
+		getItems(nil, keys, out, opts)
+	}
+}
+func getItemsMap(obj any, keys []string, out *[]any, opts map[Option]struct{}, key string) {
+	m := reflect.ValueOf(obj)
+	if key == "#" || key == "#v" {
+		mKeys := getKeys(m.MapKeys()) //Need sort in golang for stable iteration order
+		for _, k := range mKeys {
+			getItems(m.MapIndex(reflect.ValueOf(k)).Interface(), keys, out, opts)
+		}
+		return
+	}
+	if key == "#k" {
+		mKeys := getKeys(m.MapKeys()) //Need sort in golang for stable iteration order
+		for _, k := range mKeys {
+			getItems(k, keys, out, opts)
+		}
+		return
+	}
+	if strings.HasPrefix(key, "^") {
+		key = strings.ReplaceAll(key, DotAlternative, ".")
+		reg, err := regexp.Compile(key)
+		if err != nil {
+			return
+		}
+		mKeys := getKeys(m.MapKeys()) //Need sort in golang for stable iteration order
+		for _, k := range mKeys {
+			if reg.Match([]byte(k)) {
+				getItems(m.MapIndex(reflect.ValueOf(k)).Interface(), keys, out, opts)
+			}
+		}
+		return
+	}
+	v := m.MapIndex(reflect.ValueOf(key))
+	if v.IsValid() {
+		getItems(v.Interface(), keys, out, opts)
+	} else if len(keys) == 0 { //get null for final missing by default
+		getItems(nil, keys, out, opts)
+	}
+}
+
 func getItems(obj any, keys []string, out *[]any, opts map[Option]struct{}) {
 	if len(keys) == 0 {
 		if _, exists := opts[OptOmitNoValue]; exists && obj == nil {
@@ -88,62 +146,10 @@ func getItems(obj any, keys []string, out *[]any, opts map[Option]struct{}) {
 	//Note: If you have a pointer to a slice instead of a slice, you'll need to use Elem() to get the underlying value. e.g. reflect.TypeOf(reflect.ValueOf(t).Elem().Interface()).Kind()
 	switch reflect.TypeOf(obj).Kind() {
 	case reflect.Slice:
-		sl := reflect.ValueOf(obj)
-		if key == "#" || key == "#v" {
-			for i := 0; i < sl.Len(); i++ {
-				getItems(sl.Index(i).Interface(), keys, out, opts)
-			}
-			return
-		}
-		if key == "#k" {
-			for i := 0; i < sl.Len(); i++ {
-				getItems(i, keys, out, opts)
-			}
-			return
-		}
-		if i, err := strconv.Atoi(key); err == nil && i < sl.Len() {
-			getItems(sl.Index(i).Interface(), keys, out, opts)
-		} else if len(keys) == 0 { //get null for final missing by default
-			getItems(nil, keys, out, opts)
-		}
+		getItemsSlice(obj, keys, out, opts, key)
 		return
 	case reflect.Map:
-		m := reflect.ValueOf(obj)
-		if key == "#" || key == "#v" {
-			mKeys := getKeys(m.MapKeys()) //Need sort in golang for stable iteration order
-			for _, k := range mKeys {
-				getItems(m.MapIndex(reflect.ValueOf(k)).Interface(), keys, out, opts)
-			}
-			return
-		}
-		if key == "#k" {
-			mKeys := getKeys(m.MapKeys()) //Need sort in golang for stable iteration order
-			for _, k := range mKeys {
-				getItems(k, keys, out, opts)
-			}
-			return
-		}
-		if strings.HasPrefix(key, "^") {
-			key = strings.ReplaceAll(key, DotAlternative, ".")
-			reg, err := regexp.Compile(key)
-			if err != nil {
-				return
-			}
-			mKeys := getKeys(m.MapKeys()) //Need sort in golang for stable iteration order
-			for _, k := range mKeys {
-				if reg.Match([]byte(k)) {
-					getItems(m.MapIndex(reflect.ValueOf(k)).Interface(), keys, out, opts)
-				}
-			}
-			return
-		}
-		v := m.MapIndex(reflect.ValueOf(key))
-		if v.IsValid() {
-			getItems(v.Interface(), keys, out, opts)
-		} else if len(keys) == 0 { //get null for final missing by default
-			getItems(nil, keys, out, opts)
-		}
-
+		getItemsMap(obj, keys, out, opts, key)
 		return
 	}
 }

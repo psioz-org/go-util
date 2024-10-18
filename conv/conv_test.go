@@ -3183,6 +3183,14 @@ func TestGetItems(t *testing.T) {
 			want: []any{"ax"},
 		},
 		{
+			name: "string&slice of string. regexp err",
+			args: args{
+				obj:  toMap(`{"path1":{"path2":{"items":[{"value":"a"},{"value":"b"},{"value":"x"},{"valuex":"ax","valueb":"ab","valuea":"aa","zz":"zz","value":"a"},{},{"value":"777"},{"value":"7"}]}}}`),
+				keys: "path1.path2.items.#.^(xx" + DotAlternative + "*x$",
+			},
+			want: []any{},
+		},
+		{
 			name: "map of all value types by any",
 			args: args{
 				obj: map[string]any{
