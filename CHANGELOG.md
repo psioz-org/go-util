@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.0](https://github.com/psioz-org/go-util/compare/v1.3.0...v1.4.0) (2024-10-18)
+
+
+### Features
+
+* add-get-values ([9158c05](https://github.com/psioz-org/go-util/commit/9158c05c78ce45846bfd0f0602afcea9912733d2))
+
 ## [1.3.0](https://github.com/psioz-org/go-util/compare/v1.2.3...v1.3.0) (2023-10-16)
 
 
