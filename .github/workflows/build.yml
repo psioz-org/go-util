@@ -55,7 +55,7 @@ jobs:
     env:
       GO111MODULE: on
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of analysis
       - name: Run Gosec Security Scanner
@@ -64,6 +64,6 @@ jobs:
           args: '-no-fail -fmt sarif -out results.sarif ./...' # we let the report trigger content trigger a failure using the GitHub Security features.
           # args: '-no-fail -fmt sonarqube -out gosec-report.json ./...' # sonar option
       - name: Upload SARIF file
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
