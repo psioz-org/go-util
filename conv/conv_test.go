@@ -1,6 +1,7 @@
 package conv
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"go/ast"
@@ -8,6 +9,7 @@ import (
 	"reflect"
 	"regexp"
 	"runtime"
+	"sort"
 	"testing"
 )
 
@@ -18,9 +20,9 @@ const (
 )
 
 var (
-	jsonFullCheckMapObj = map[string]interface{}{"empty": "", "false": false, "float": 777.7, "int": 777, "int string": "777", "null": nil, "string": "string", "true": true}
+	jsonFullCheckMapObj = map[string]any{"empty": "", "false": false, "float": 777.7, "int": 777, "int string": "777", "null": nil, "string": "string", "true": true}
 	//When unmarshal any number is float
-	jsonFullCheckMapObjOnlyFloat = map[string]interface{}{"empty": "", "false": false, "float": 777.7, "int": 777.0, "int string": "777", "null": nil, "string": "string", "true": true}
+	jsonFullCheckMapObjOnlyFloat = map[string]any{"empty": "", "false": false, "float": 777.7, "int": 777.0, "int string": "777", "null": nil, "string": "string", "true": true}
 )
 
 type Shape interface {
@@ -52,7 +54,7 @@ func func1() {
 func TestGetItemTestGeneric(t *testing.T) {
 	t.Parallel()
 	type args struct {
-		obj  interface{}
+		obj  any
 		keys string
 		sep  string
 	}
@@ -65,9 +67,9 @@ func TestGetItemTestGeneric(t *testing.T) {
 		{
 			name: "test generic success",
 			args: args{
-				obj: map[string]interface{}{
-					"x": map[string]interface{}{
-						"y": map[string]interface{}{
+				obj: map[string]any{
+					"x": map[string]any{
+						"y": map[string]any{
 							"z": 3,
 						},
 					},
@@ -80,9 +82,9 @@ func TestGetItemTestGeneric(t *testing.T) {
 		{
 			name: "test generic success array index",
 			args: args{
-				obj: map[string]interface{}{
-					"x": map[string]interface{}{
-						"y": []interface{}{
+				obj: map[string]any{
+					"x": map[string]any{
+						"y": []any{
 							1,
 							2,
 						},
@@ -96,9 +98,9 @@ func TestGetItemTestGeneric(t *testing.T) {
 		{
 			name: "test generic fail cast to result type",
 			args: args{
-				obj: map[string]interface{}{
-					"x": map[string]interface{}{
-						"y": map[string]interface{}{
+				obj: map[string]any{
+					"x": map[string]any{
+						"y": map[string]any{
 							"z": "3.3",
 						},
 					},
@@ -127,7 +129,7 @@ func TestGetItemTestGeneric(t *testing.T) {
 func TestGetItem(t *testing.T) {
 	t.Parallel()
 	type args struct {
-		obj  interface{}
+		obj  any
 		keys string
 		sep  string
 	}
@@ -137,15 +139,15 @@ func TestGetItem(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    interface{}
+		want    any
 		wantErr bool
 	}{
 		{
 			name: "test result success",
 			args: args{
-				obj: map[string]interface{}{
-					"x": map[string]interface{}{
-						"y": map[string]interface{}{
+				obj: map[string]any{
+					"x": map[string]any{
+						"y": map[string]any{
 							"z": result1,
 						},
 					},
@@ -158,9 +160,9 @@ func TestGetItem(t *testing.T) {
 		{
 			name: "test result success array index",
 			args: args{
-				obj: map[string]interface{}{
-					"x": map[string]interface{}{
-						"y": []interface{}{
+				obj: map[string]any{
+					"x": map[string]any{
+						"y": []any{
 							result1,
 							result2,
 						},
@@ -174,8 +176,8 @@ func TestGetItem(t *testing.T) {
 		{
 			name: "fail cast to map to get key",
 			args: args{
-				obj: map[string]interface{}{
-					"x": map[string]interface{}{},
+				obj: map[string]any{
+					"x": map[string]any{},
 				},
 				keys: "x/y/z",
 				sep:  "/",
@@ -186,8 +188,8 @@ func TestGetItem(t *testing.T) {
 		{
 			name: "fail cast to array to get key",
 			args: args{
-				obj: map[string]interface{}{
-					"x": map[string]interface{}{},
+				obj: map[string]any{
+					"x": map[string]any{},
 				},
 				keys: "x/y/0",
 				sep:  "/",
@@ -198,8 +200,8 @@ func TestGetItem(t *testing.T) {
 		{
 			name: "get nil for non-exists",
 			args: args{
-				obj: map[string]interface{}{
-					"x": map[string]interface{}{},
+				obj: map[string]any{
+					"x": map[string]any{},
 				},
 				keys: "x/y",
 				sep:  "/",
@@ -210,7 +212,7 @@ func TestGetItem(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetItem[interface{}](tt.args.obj, tt.args.keys, tt.args.sep)
+			got, err := GetItem[any](tt.args.obj, tt.args.keys, tt.args.sep)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetItem() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -308,7 +310,7 @@ func TestTernaryInt(t *testing.T) {
 func TestTo(t *testing.T) {
 	t.Parallel()
 	type args struct {
-		obj interface{}
+		obj any
 	}
 	type testCase[T any] struct {
 		name    string
@@ -2405,7 +2407,7 @@ func TestTo(t *testing.T) {
 		{
 			name: "array > " + stringTo,
 			args: args{
-				obj: [5]interface{}{777, "777", true, 7.7, nil},
+				obj: [5]any{777, "777", true, 7.7, nil},
 			},
 			wantOut: `[777,"777",true,7.7,null]`,
 		},
@@ -2419,7 +2421,7 @@ func TestTo(t *testing.T) {
 		{
 			name: "slice > " + stringTo,
 			args: args{
-				obj: []interface{}{777, "777", true, 7.7, nil},
+				obj: []any{777, "777", true, 7.7, nil},
 			},
 			wantOut: `[777,"777",true,7.7,null]`,
 		},
@@ -2792,7 +2794,7 @@ func TestTo(t *testing.T) {
 	}
 
 	const mapTo = "map"
-	mapTests := []testCase[map[string]interface{}]{
+	mapTests := []testCase[map[string]any]{
 		{
 			name: "string > " + mapTo,
 			args: args{
@@ -2826,14 +2828,14 @@ func TestTo(t *testing.T) {
 			args: args{
 				obj: `{}`,
 			},
-			wantOut: map[string]interface{}{},
+			wantOut: map[string]any{},
 		},
 	}
 	for _, tt := range mapTests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotOut, err := To[map[string]interface{}](tt.args.obj)
+			gotOut, err := To[map[string]any](tt.args.obj)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("To() map[string]interface{} = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("To() map[string]any = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(gotOut, tt.wantOut) {
@@ -2904,7 +2906,7 @@ func TestTo(t *testing.T) {
 func TestToForce(t *testing.T) {
 	t.Parallel()
 	type args struct {
-		obj interface{}
+		obj any
 	}
 	type testCase[T any] struct {
 		name    string
@@ -3042,6 +3044,669 @@ func Test_getFuncBodyString(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got1 := getFuncBodyString(tt.args.f, tt.args.fs); !reflect.DeepEqual(got1, tt.want) {
 				t.Errorf("getFuncBodyString() got = %v, want %v", got1, tt.want)
+			}
+		})
+	}
+}
+
+func toMap(str string) (out map[string]any) {
+	json.Unmarshal([]byte(str), &out)
+	return
+}
+
+func TestGetItemsNeedSortAsMapKeyUndeterministic(t *testing.T) {
+	type args struct {
+		obj  any
+		keys string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []string
+	}{
+		{
+			name: "#k",
+			args: args{
+				obj:  toMap(`{"path1":{"path2":{"items":[{"value":"a","k2":2,"k3":3},{"value":"b"},{"value":null},{"valuex":"b"},{},{"value":"777"},{"value":7}]}}}`),
+				keys: "path1.path2.items.#.#k",
+			},
+			want: []string{"k2", "k3", "value", "value", "value", "value", "value", "valuex"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := GetItems(tt.args.obj, tt.args.keys)
+			ss := []string{}
+			for _, v := range got {
+				ss = append(ss, v.(string))
+			}
+			sort.Strings(ss)
+			if !reflect.DeepEqual(ss, tt.want) {
+
+				t.Errorf("GetItems() = %v, want %v", ss, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetItems(t *testing.T) {
+	var va any
+	var vc64 complex64
+	var vc128 complex128
+	var vf32 float32 = 32.32
+	var vf64 float64 = -64.64
+	var vi1 int = 1
+	var vi8 int8 = -8
+	var vi16 int16 = 16
+	var vi32 int32 = -32
+	var vi64 int64 = 64
+	var vui1 uint = 1
+	var vui8 uint8 = 8
+	var vui16 uint16 = 16
+	var vui32 uint32 = 32
+	var vui64 uint64 = 64
+	var vs0 string
+	var vs string = "string"
+	var vuip uintptr
+
+	type args struct {
+		obj  any
+		keys string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []any
+	}{
+		{
+			name: "#k slice",
+			args: args{
+				obj:  toMap(`{"path1":{"path2":{"items":[{"value":"a","k2":2,"k3":3},{"value":"b"},{"value":null},{"valuex":"b"},{},{"value":"777"},{"value":7}]}}}`),
+				keys: "path1.path2.items.#k",
+			},
+			want: []any{0, 1, 2, 3, 4, 5, 6},
+		},
+		{
+			name: "string&slice of string, unmarshal always use float not int",
+			args: args{
+				obj:  toMap(`{"path1":{"path2":{"items":[{"value":"a"},{"value":"b"},{"value":null},{"valuex":"b"},{},{"value":"777"},{"value":7}]}}}`),
+				keys: "path1.path2.items.#.value",
+			},
+			want: []any{"a", "b", nil, nil, nil, "777", 7.0},
+		},
+		{
+			name: "string&slice of string, unmarshal always use float not int. alternative slice #v",
+			args: args{
+				obj:  toMap(`{"path1":{"path2":{"items":[{"value":"a"},{"value":"b"},{"value":null},{"valuex":"b"},{},{"value":"777"},{"value":7}]}}}`),
+				keys: "path1.path2.items.#v.value",
+			},
+			want: []any{"a", "b", nil, nil, nil, "777", 7.0},
+		},
+		{
+			name: "string&slice of string, unmarshal always use float not int. map #",
+			args: args{
+				obj:  toMap(`{"path1":{"path2":{"items":[{"value":"a"},{"value":"b"},{"value":null},{"valuex":"b"},{},{"value":"777"},{"value":7}]}}}`),
+				keys: "path1.path2.items.#.#",
+			},
+			want: []any{"a", "b", nil, "b", "777", 7.0},
+		},
+		{
+			name: "string/slice of string, unmarshal always use float not int. alternative map #v",
+			args: args{
+				obj:  toMap(`{"path1":{"path2":{"items":[{"value":"a"},{"value":"b"},{"value":null},{"valuex":"b"},{},{"value":"777"},{"value":7}]}}}`),
+				keys: "path1.path2.items.#.#v",
+			},
+			want: []any{"a", "b", nil, "b", "777", 7.0},
+		},
+		{
+			name: "string&slice of string. map # order",
+			args: args{
+				obj:  toMap(`{"path1":{"path2":{"items":[{"value":"a"},{"value":"b"},{"value":"x"},{"valuex":"ax","valueb":"ab","valuea":"aa","value":"a"},{},{"value":"777"},{"value":"7"}]}}}`),
+				keys: "path1.path2.items.#.#",
+			},
+			want: []any{"a", "b", "x", "a", "aa", "ab", "ax", "777", "7"},
+		},
+		{
+			name: "string&slice of string. regexp",
+			args: args{
+				obj:  toMap(`{"path1":{"path2":{"items":[{"value":"a"},{"value":"b"},{"value":"x"},{"valuex":"ax","valueb":"ab","valuea":"aa","zz":"zz","value":"a"},{},{"value":"777"},{"value":"7"}]}}}`),
+				keys: "path1.path2.items.#.^va",
+			},
+			want: []any{"a", "b", "x", "a", "aa", "ab", "ax", "777", "7"},
+		},
+		{
+			name: "string&slice of string. regexp2",
+			args: args{
+				obj:  toMap(`{"path1":{"path2":{"items":[{"value":"a"},{"value":"b"},{"value":"x"},{"valuex":"ax","valueb":"ab","valuea":"aa","zz":"zz","value":"a"},{},{"value":"777"},{"value":"7"}]}}}`),
+				keys: "path1.path2.items.#.^" + DotAlternative + "*x$",
+			},
+			want: []any{"ax"},
+		},
+		{
+			name: "map of all value types by any",
+			args: args{
+				obj: map[string]any{
+					"path1": map[string]any{
+						"path2": map[string]any{
+							"items": []any{
+								map[string]any{
+									"value": va,
+								},
+								map[string]any{
+									"value": nil,
+								},
+								map[string]any{},
+								map[string]any{
+									"value": true,
+								},
+								map[string]any{
+									"value": false,
+								},
+								map[string]any{
+									"value": vc64,
+								},
+								map[string]any{
+									"value": vc128,
+								},
+								map[string]any{
+									"value": vf32,
+								},
+								map[string]any{
+									"value": vf64,
+								},
+								map[string]any{
+									"value": vi1,
+								},
+								map[string]any{
+									"value": vi8,
+								},
+								map[string]any{
+									"value": vi16,
+								},
+								map[string]any{
+									"value": vi32,
+								},
+								map[string]any{
+									"value": vi64,
+								},
+								map[string]any{
+									"value": vui1,
+								},
+								map[string]any{
+									"value": vui8,
+								},
+								map[string]any{
+									"value": vui16,
+								},
+								map[string]any{
+									"value": vui32,
+								},
+								map[string]any{
+									"value": vui64,
+								},
+								map[string]any{
+									"value": vs0,
+								},
+								map[string]any{
+									"value": vs,
+								},
+								map[string]any{
+									"value": vuip,
+								},
+							},
+						},
+					},
+				},
+				keys: "path1.path2.items.#.value",
+			},
+			want: []any{va, nil, nil, true, false, vc64, vc128, vf32, vf64, vi1, vi8, vi16, vi32, vi64, vui1, vui8, vui16, vui32, vui64, vs0, vs, vuip},
+		}, {
+			name: "slice of all value types",
+			args: args{
+				obj: map[string]any{
+					"path1": map[string]any{
+						"path2": map[string]any{
+							"items": []any{
+								map[string]any{
+									"value": []any{va, va},
+								},
+								map[string]any{
+									"value": []any{nil, nil},
+								},
+								map[string]any{
+									"value": []any{},
+								},
+								map[string]any{
+									"value": []bool{true, true},
+								},
+								map[string]any{
+									"value": []bool{false, false},
+								},
+								map[string]any{
+									"value": []complex64{vc64, vc64},
+								},
+								map[string]any{
+									"value": []complex128{vc128, vc128},
+								},
+								map[string]any{
+									"value": []float32{vf32, vf32},
+								},
+								map[string]any{
+									"value": []float64{vf64, vf64},
+								},
+								map[string]any{
+									"value": []int{vi1, vi1},
+								},
+								map[string]any{
+									"value": []int8{vi8, vi8},
+								},
+								map[string]any{
+									"value": []int16{vi16, vi16},
+								},
+								map[string]any{
+									"value": []int32{vi32, vi32},
+								},
+								map[string]any{
+									"value": []int64{vi64, vi64},
+								},
+								map[string]any{
+									"value": []uint{vui1, vui1},
+								},
+								map[string]any{
+									"value": []uint8{vui8, vui8},
+								},
+								map[string]any{
+									"value": []uint16{vui16, vui16},
+								},
+								map[string]any{
+									"value": []uint32{vui32, vui32},
+								},
+								map[string]any{
+									"value": []uint64{vui64, vui64},
+								},
+								map[string]any{
+									"value": []string{vs0, vs0},
+								},
+								map[string]any{
+									"value": []string{vs, vs},
+								},
+								map[string]any{
+									"value": []uintptr{vuip, vuip},
+								},
+							},
+						},
+					},
+				},
+				keys: "path1.path2.items.#.value.1",
+			},
+			want: []any{va, nil, nil, true, false, vc64, vc128, vf32, vf64, vi1, vi8, vi16, vi32, vi64, vui1, vui8, vui16, vui32, vui64, vs0, vs, vuip},
+		}, {
+			name: "map of all value types by native",
+			args: args{
+				obj: map[string]any{
+					"path1": map[string]any{
+						"path2": map[string]any{
+							"items": []any{
+								map[string]any{
+									"value": va,
+								},
+								map[string]any{
+									"value": nil,
+								},
+								map[string]int{},
+								map[string]bool{
+									"value": true,
+								},
+								map[string]bool{
+									"value": false,
+								},
+								map[string]complex64{
+									"value": vc64,
+								},
+								map[string]complex128{
+									"value": vc128,
+								},
+								map[string]float32{
+									"value": vf32,
+								},
+								map[string]float64{
+									"value": vf64,
+								},
+								map[string]int{
+									"value": vi1,
+								},
+								map[string]int8{
+									"value": vi8,
+								},
+								map[string]int16{
+									"value": vi16,
+								},
+								map[string]int32{
+									"value": vi32,
+								},
+								map[string]int64{
+									"value": vi64,
+								},
+								map[string]uint{
+									"value": vui1,
+								},
+								map[string]uint8{
+									"value": vui8,
+								},
+								map[string]uint16{
+									"value": vui16,
+								},
+								map[string]uint32{
+									"value": vui32,
+								},
+								map[string]uint64{
+									"value": vui64,
+								},
+								map[string]string{
+									"value": vs0,
+								},
+								map[string]string{
+									"value": vs,
+								},
+								map[string]uintptr{
+									"value": vuip,
+								},
+							},
+						},
+					},
+				},
+				keys: "path1.path2.items.#.value",
+			},
+			want: []any{va, nil, nil, true, false, vc64, vc128, vf32, vf64, vi1, vi8, vi16, vi32, vi64, vui1, vui8, vui16, vui32, vui64, vs0, vs, vuip},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetItems(tt.args.obj, tt.args.keys); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetItems() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestGetItemsWithOptOmitNoValue(t *testing.T) {
+	var va any
+	var vc64 complex64
+	var vc128 complex128
+	var vf32 float32 = 32.32
+	var vf64 float64 = -64.64
+	var vi1 int = 1
+	var vi8 int8 = -8
+	var vi16 int16 = 16
+	var vi32 int32 = -32
+	var vi64 int64 = 64
+	var vui1 uint = 1
+	var vui8 uint8 = 8
+	var vui16 uint16 = 16
+	var vui32 uint32 = 32
+	var vui64 uint64 = 64
+	var vs0 string
+	var vs string = "string"
+	var vuip uintptr
+
+	type args struct {
+		obj  any
+		keys string
+	}
+	tests := []struct {
+		name string
+		args args
+		want []any
+	}{
+		{
+			name: "string/slice of string, unmarshal always use float not int",
+			args: args{
+				obj:  toMap(`{"path1":{"path2":{"items":[{"value":"a"},{"value":"b"},{"value":null},{"valuex":"b"},{},{"value":"777"},{"value":7}]}}}`),
+				keys: "path1.path2.items.#.value",
+			},
+			want: []any{"a", "b", "777", 7.0},
+		}, {
+			name: "map of all value types by any",
+			args: args{
+				obj: map[string]any{
+					"path1": map[string]any{
+						"path2": map[string]any{
+							"items": []any{
+								map[string]any{
+									"value": va,
+								},
+								map[string]any{
+									"value": nil,
+								},
+								map[string]any{},
+								map[string]any{
+									"value": true,
+								},
+								map[string]any{
+									"value": false,
+								},
+								map[string]any{
+									"value": vc64,
+								},
+								map[string]any{
+									"value": vc128,
+								},
+								map[string]any{
+									"value": vf32,
+								},
+								map[string]any{
+									"value": vf64,
+								},
+								map[string]any{
+									"value": vi1,
+								},
+								map[string]any{
+									"value": vi8,
+								},
+								map[string]any{
+									"value": vi16,
+								},
+								map[string]any{
+									"value": vi32,
+								},
+								map[string]any{
+									"value": vi64,
+								},
+								map[string]any{
+									"value": vui1,
+								},
+								map[string]any{
+									"value": vui8,
+								},
+								map[string]any{
+									"value": vui16,
+								},
+								map[string]any{
+									"value": vui32,
+								},
+								map[string]any{
+									"value": vui64,
+								},
+								map[string]any{
+									"value": vs0,
+								},
+								map[string]any{
+									"value": vs,
+								},
+								map[string]any{
+									"value": vuip,
+								},
+							},
+						},
+					},
+				},
+				keys: "path1.path2.items.#.value",
+			},
+			want: []any{true, false, vc64, vc128, vf32, vf64, vi1, vi8, vi16, vi32, vi64, vui1, vui8, vui16, vui32, vui64, vs0, vs, vuip},
+		}, {
+			name: "slice of all value types",
+			args: args{
+				obj: map[string]any{
+					"path1": map[string]any{
+						"path2": map[string]any{
+							"items": []any{
+								map[string]any{
+									"value": []any{va, va},
+								},
+								map[string]any{
+									"value": []any{nil, nil},
+								},
+								map[string]any{
+									"value": []any{},
+								},
+								map[string]any{
+									"value": []bool{true, true},
+								},
+								map[string]any{
+									"value": []bool{false, false},
+								},
+								map[string]any{
+									"value": []complex64{vc64, vc64},
+								},
+								map[string]any{
+									"value": []complex128{vc128, vc128},
+								},
+								map[string]any{
+									"value": []float32{vf32, vf32},
+								},
+								map[string]any{
+									"value": []float64{vf64, vf64},
+								},
+								map[string]any{
+									"value": []int{vi1, vi1},
+								},
+								map[string]any{
+									"value": []int8{vi8, vi8},
+								},
+								map[string]any{
+									"value": []int16{vi16, vi16},
+								},
+								map[string]any{
+									"value": []int32{vi32, vi32},
+								},
+								map[string]any{
+									"value": []int64{vi64, vi64},
+								},
+								map[string]any{
+									"value": []uint{vui1, vui1},
+								},
+								map[string]any{
+									"value": []uint8{vui8, vui8},
+								},
+								map[string]any{
+									"value": []uint16{vui16, vui16},
+								},
+								map[string]any{
+									"value": []uint32{vui32, vui32},
+								},
+								map[string]any{
+									"value": []uint64{vui64, vui64},
+								},
+								map[string]any{
+									"value": []string{vs0, vs0},
+								},
+								map[string]any{
+									"value": []string{vs, vs},
+								},
+								map[string]any{
+									"value": []uintptr{vuip, vuip},
+								},
+							},
+						},
+					},
+				},
+				keys: "path1.path2.items.#.value.1",
+			},
+			want: []any{true, false, vc64, vc128, vf32, vf64, vi1, vi8, vi16, vi32, vi64, vui1, vui8, vui16, vui32, vui64, vs0, vs, vuip},
+		}, {
+			name: "map of all value types by native",
+			args: args{
+				obj: map[string]any{
+					"path1": map[string]any{
+						"path2": map[string]any{
+							"items": []any{
+								map[string]any{
+									"value": va,
+								},
+								map[string]any{
+									"value": nil,
+								},
+								map[string]int{},
+								map[string]bool{
+									"value": true,
+								},
+								map[string]bool{
+									"value": false,
+								},
+								map[string]complex64{
+									"value": vc64,
+								},
+								map[string]complex128{
+									"value": vc128,
+								},
+								map[string]float32{
+									"value": vf32,
+								},
+								map[string]float64{
+									"value": vf64,
+								},
+								map[string]int{
+									"value": vi1,
+								},
+								map[string]int8{
+									"value": vi8,
+								},
+								map[string]int16{
+									"value": vi16,
+								},
+								map[string]int32{
+									"value": vi32,
+								},
+								map[string]int64{
+									"value": vi64,
+								},
+								map[string]uint{
+									"value": vui1,
+								},
+								map[string]uint8{
+									"value": vui8,
+								},
+								map[string]uint16{
+									"value": vui16,
+								},
+								map[string]uint32{
+									"value": vui32,
+								},
+								map[string]uint64{
+									"value": vui64,
+								},
+								map[string]string{
+									"value": vs0,
+								},
+								map[string]string{
+									"value": vs,
+								},
+								map[string]uintptr{
+									"value": vuip,
+								},
+							},
+						},
+					},
+				},
+				keys: "path1.path2.items.#.value",
+			},
+			want: []any{true, false, vc64, vc128, vf32, vf64, vi1, vi8, vi16, vi32, vi64, vui1, vui8, vui16, vui32, vui64, vs0, vs, vuip},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := GetItems(tt.args.obj, tt.args.keys, OptOmitNoValue); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetItems() = %v, want %v", got, tt.want)
 			}
 		})
 	}

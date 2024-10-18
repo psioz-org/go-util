@@ -11,27 +11,29 @@ import (
 	"go/printer"
 	"go/token"
 	"reflect"
+	"regexp"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/zev-zakaryan/go-util/stringz"
 )
 
-// GetItem return generic type of specified keys. Allow only map[string]interface{}/[]interface{} parent as it's used with nerdgraph structure.
-func GetItem[T any](obj interface{}, keys string, sep string) (T, error) {
+// GetItem return generic type of specified keys. Allow only map[string]any/[]any parent as it's used with nerdgraph structure.
+func GetItem[T any](obj any, keys string, sep string) (T, error) {
 	out := obj
 	ss := strings.Split(keys, sep)
 	for _, k := range ss {
 		if ki, err := strconv.Atoi(k); err == nil {
-			if objArr, ok := out.([]interface{}); ok {
+			if objArr, ok := out.([]any); ok {
 				out = objArr[ki]
 			} else {
 				var zero T
 				return zero, fmt.Errorf("fail cast to array to get key %v (%v), obj %v", ki, keys, out)
 			}
 		} else {
-			if objMap, ok := out.(map[string]interface{}); ok {
+			if objMap, ok := out.(map[string]any); ok {
 				out = objMap[k]
 			} else {
 				var zero T
@@ -45,6 +47,104 @@ func GetItem[T any](obj interface{}, keys string, sep string) (T, error) {
 		return outT, nil
 	} else {
 		return To[T](out)
+	}
+}
+
+func GetItems(obj any, keys string, opts ...Option) []any {
+	optsMap := make(map[Option]struct{}, 0)
+	for _, opt := range opts {
+		optsMap[opt] = struct{}{}
+	}
+	out := make([]any, 0)
+	getItems(obj, strings.Split(keys, "."), &out, optsMap)
+	return out
+}
+
+type Option string
+
+const (
+	DotAlternative        = "․"
+	OptOmitNoValue Option = "omit no value" //We ignore undefined if exists such as javascript, in go completely ignore null
+)
+
+func getKeys(mapKeys []reflect.Value) (mKeys []string) {
+	for _, e := range mapKeys {
+		mKeys = append(mKeys, e.Interface().(string))
+	}
+	sort.Strings(mKeys) //Need sort in golang for stable iteration order
+	return
+}
+
+func getItems(obj any, keys []string, out *[]any, opts map[Option]struct{}) {
+	if len(keys) == 0 {
+		if _, exists := opts[OptOmitNoValue]; exists && obj == nil {
+			return
+		}
+		*out = append(*out, obj)
+		return
+	}
+	key := keys[0]
+	keys = keys[1:]
+	//Note: If you have a pointer to a slice instead of a slice, you'll need to use Elem() to get the underlying value. e.g. reflect.TypeOf(reflect.ValueOf(t).Elem().Interface()).Kind()
+	switch reflect.TypeOf(obj).Kind() {
+	case reflect.Slice:
+		sl := reflect.ValueOf(obj)
+		if key == "#" || key == "#v" {
+			for i := 0; i < sl.Len(); i++ {
+				getItems(sl.Index(i).Interface(), keys, out, opts)
+			}
+			return
+		}
+		if key == "#k" {
+			for i := 0; i < sl.Len(); i++ {
+				getItems(i, keys, out, opts)
+			}
+			return
+		}
+		if i, err := strconv.Atoi(key); err == nil && i < sl.Len() {
+			getItems(sl.Index(i).Interface(), keys, out, opts)
+		} else if len(keys) == 0 { //get null for final missing by default
+			getItems(nil, keys, out, opts)
+		}
+		return
+	case reflect.Map:
+		m := reflect.ValueOf(obj)
+		if key == "#" || key == "#v" {
+			mKeys := getKeys(m.MapKeys()) //Need sort in golang for stable iteration order
+			for _, k := range mKeys {
+				getItems(m.MapIndex(reflect.ValueOf(k)).Interface(), keys, out, opts)
+			}
+			return
+		}
+		if key == "#k" {
+			mKeys := getKeys(m.MapKeys()) //Need sort in golang for stable iteration order
+			for _, k := range mKeys {
+				getItems(k, keys, out, opts)
+			}
+			return
+		}
+		if strings.HasPrefix(key, "^") {
+			key = strings.ReplaceAll(key, DotAlternative, ".")
+			reg, err := regexp.Compile(key)
+			if err != nil {
+				return
+			}
+			mKeys := getKeys(m.MapKeys()) //Need sort in golang for stable iteration order
+			for _, k := range mKeys {
+				if reg.Match([]byte(k)) {
+					getItems(m.MapIndex(reflect.ValueOf(k)).Interface(), keys, out, opts)
+				}
+			}
+			return
+		}
+		v := m.MapIndex(reflect.ValueOf(key))
+		if v.IsValid() {
+			getItems(v.Interface(), keys, out, opts)
+		} else if len(keys) == 0 { //get null for final missing by default
+			getItems(nil, keys, out, opts)
+		}
+
+		return
 	}
 }
 
@@ -69,7 +169,7 @@ func toBool(obj any) any {
 }
 
 func toString(obj any) (v any) {
-	//case func(),struct{} match nothing even using before interface{}. interface{} match map,struct{},error,any (e.g. int also match) so it's not useful
+	//case func(),struct{} match nothing even using before any. any match map,struct{},error,any (e.g. int also match) so it's not useful
 	switch objV := obj.(type) {
 	case nil, bool, complex64, complex128, float32, float64, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, uintptr, string:
 		v = fmt.Sprintf("%v", obj)
@@ -82,7 +182,7 @@ func toString(obj any) (v any) {
 			objBs[i1] = uint16(v1)
 		}
 		v = stringz.ToJson(objBs, "")
-	default: //any=interface{}. []any will match only []interface{} (also slice only, not array). The same as map[any]any.
+	default: //any=any. []any will match only []any (also slice only, not array). The same as map[any]any.
 		rv := reflect.ValueOf(obj)
 		switch rv.Kind() {
 		case reflect.Array, reflect.Map, reflect.Slice: //Beware marshal of byte slice will be base64, we handle above
@@ -102,7 +202,7 @@ func toString(obj any) (v any) {
 	return
 }
 
-func toObject[T any](obj any, out T) (v interface{}, err error) {
+func toObject[T any](obj any, out T) (v any, err error) {
 	s := str(obj)
 	switch any(&out).(type) {
 	case *error: //Unlike other instance, "out error" starts with nil so any(out).(type) = nil. We still can check pointer.
@@ -124,11 +224,11 @@ func toObject[T any](obj any, out T) (v interface{}, err error) {
 	return
 }
 
-func To[T any](obj interface{}) (out T, err error) {
+func To[T any](obj any) (out T, err error) {
 	if v, ok := obj.(T); ok {
 		return v, nil
 	}
-	var v interface{}
+	var v any
 	var vc128 complex128
 	var vi64 int64
 	var vui64 uint64
@@ -188,12 +288,12 @@ func To[T any](obj interface{}) (out T, err error) {
 	return
 }
 
-func ToForce[T any](obj interface{}) (out T) {
+func ToForce[T any](obj any) (out T) {
 	out, _ = To[T](obj)
 	return
 }
 
-func str(obj interface{}) string {
+func str(obj any) string {
 	switch objV := obj.(type) {
 	case string:
 		return objV
@@ -202,7 +302,7 @@ func str(obj interface{}) string {
 	}
 }
 
-func getFuncInfo(f interface{}) (name, file string) {
+func getFuncInfo(f any) (name, file string) {
 	pc := reflect.ValueOf(f).Pointer()
 	if fn := runtime.FuncForPC(pc); fn != nil {
 		name = fn.Name()
