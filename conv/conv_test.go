@@ -3260,7 +3260,8 @@ func TestGetItems(t *testing.T) {
 				keys: "path1.path2.items.#.value",
 			},
 			want: []any{va, nil, nil, true, false, vc64, vc128, vf32, vf64, vi1, vi8, vi16, vi32, vi64, vui1, vui8, vui16, vui32, vui64, vs0, vs, vuip},
-		}, {
+		},
+		{
 			name: "slice of all value types",
 			args: args{
 				obj: map[string]any{
@@ -3340,7 +3341,8 @@ func TestGetItems(t *testing.T) {
 				keys: "path1.path2.items.#.value.1",
 			},
 			want: []any{va, nil, nil, true, false, vc64, vc128, vf32, vf64, vi1, vi8, vi16, vi32, vi64, vui1, vui8, vui16, vui32, vui64, vs0, vs, vuip},
-		}, {
+		},
+		{
 			name: "map of all value types by native",
 			args: args{
 				obj: map[string]any{
