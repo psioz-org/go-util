@@ -4202,3 +4202,285 @@ func TestGetItemsWithOptOmitNoValue(t *testing.T) {
 		})
 	}
 }
+
+func TestA1ColumnDecode(t *testing.T) {
+	type args struct {
+		column string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    int
+		wantErr bool
+	}{
+		{
+			name: "1",
+			args: args{
+				column: "A",
+			},
+			want:    1,
+			wantErr: false,
+		},
+		{
+			name: "3",
+			args: args{
+				column: "C",
+			},
+			want:    3,
+			wantErr: false,
+		},
+		{
+			name: "25",
+			args: args{
+				column: "Y",
+			},
+			want:    25,
+			wantErr: false,
+		},
+		{
+			name: "26",
+			args: args{
+				column: "Z",
+			},
+			want:    26,
+			wantErr: false,
+		},
+		{
+			name: "27",
+			args: args{
+				column: "AA",
+			},
+			want:    27,
+			wantErr: false,
+		},
+		{
+			name: "28",
+			args: args{
+				column: "AB",
+			},
+			want:    28,
+			wantErr: false,
+		},
+		{
+			name: "700",
+			args: args{
+				column: "ZX",
+			},
+			want:    700,
+			wantErr: false,
+		},
+		{
+			name: "701",
+			args: args{
+				column: "ZY",
+			},
+			want:    701,
+			wantErr: false,
+		},
+		{
+			name: "702",
+			args: args{
+				column: "ZZ",
+			},
+			want:    702,
+			wantErr: false,
+		},
+		{
+			name: "703",
+			args: args{
+				column: "AAA",
+			},
+			want:    703,
+			wantErr: false,
+		},
+		{
+			name: "704",
+			args: args{
+				column: "AAB",
+			},
+			want:    704,
+			wantErr: false,
+		},
+		{
+			name: "731",
+			args: args{
+				column: "ABC",
+			},
+			want:    731,
+			wantErr: false,
+		},
+		{
+			name: "ZZZ",
+			args: args{
+				column: "ZZZ",
+			},
+			want:    18278,
+			wantErr: false,
+		},
+		{
+			name: "AAAA",
+			args: args{
+				column: "AAAA",
+			},
+			want:    18279,
+			wantErr: false,
+		},
+		{
+			name: "A-AA",
+			args: args{
+				column: "A-AA",
+			},
+			want:    0,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := A1ColumnDecode(tt.args.column)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("A1ColumnDecode() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("A1ColumnDecode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestA1ColumnEncode(t *testing.T) {
+	type args struct {
+		index int
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "A",
+			args: args{
+				index: 1,
+			},
+			want:    "A",
+			wantErr: false,
+		},
+		{
+			name: "C",
+			args: args{
+				index: 3,
+			},
+			want:    "C",
+			wantErr: false,
+		},
+		{
+			name: "Y",
+			args: args{
+				index: 25,
+			},
+			want:    "Y",
+			wantErr: false,
+		},
+		{
+			name: "Z",
+			args: args{
+				index: 26,
+			},
+			want:    "Z",
+			wantErr: false,
+		},
+		{
+			name: "AA",
+			args: args{
+				index: 27,
+			},
+			want:    "AA",
+			wantErr: false,
+		},
+		{
+			name: "AB",
+			args: args{
+				index: 28,
+			},
+			want:    "AB",
+			wantErr: false,
+		},
+		{
+			name: "ZX",
+			args: args{
+				index: 700,
+			},
+			want:    "ZX",
+			wantErr: false,
+		},
+		{
+			name: "ZY",
+			args: args{
+				index: 701,
+			},
+			want:    "ZY",
+			wantErr: false,
+		},
+		{
+			name: "ZZ",
+			args: args{
+				index: 702,
+			},
+			want:    "ZZ",
+			wantErr: false,
+		},
+		{
+			name: "AAA",
+			args: args{
+				index: 703,
+			},
+			want:    "AAA",
+			wantErr: false,
+		},
+		{
+			name: "AAB",
+			args: args{
+				index: 704,
+			},
+			want:    "AAB",
+			wantErr: false,
+		},
+		{
+			name: "ABC",
+			args: args{
+				index: 731,
+			},
+			want:    "ABC",
+			wantErr: false,
+		},
+		{
+			name: "ZZZ",
+			args: args{
+				index: 18278,
+			},
+			want:    "ZZZ",
+			wantErr: false,
+		},
+		{
+			name: "AAAA",
+			args: args{
+				index: 18279,
+			},
+			want:    "",
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := A1ColumnEncode(tt.args.index)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("A1ColumnEncode() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("A1ColumnEncode() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
