@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.0](https://github.com/psioz-org/go-util/compare/v1.4.0...v1.5.0) (2024-10-21)
+
+
+### Features
+
+* A1-notation ([005ef69](https://github.com/psioz-org/go-util/commit/005ef6952858ae1ab0fe1cccc5bf22a3f8a52109))
+
 ## [1.4.0](https://github.com/psioz-org/go-util/compare/v1.3.0...v1.4.0) (2024-10-18)
 
 
