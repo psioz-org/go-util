@@ -10,6 +10,7 @@ import (
 	"go/parser"
 	"go/printer"
 	"go/token"
+	"math"
 	"reflect"
 	"regexp"
 	"runtime"
@@ -27,6 +28,55 @@ const (
 	OptOmitNoValue Option = "omit no value" //We ignore undefined if exists such as javascript, in go completely ignore null
 )
 
+// A1ColumnDecode takes in A1 Notation & converts it to an index value
+//
+// # Column A is index 1, limit by int (more than ZZZ)
+//
+// E.g. C == 3, AC == 29, ABC == 731
+//
+// https://stackoverflow.com/questions/70806630/convert-index-to-column-a1-notation-and-vice-versa
+func A1ColumnDecode(column string) (int, error) {
+	var index int
+	var a uint8 = "A"[0]
+	var z uint8 = "Z"[0]
+	var alphabet = z - a + 1
+	for i, n := 1, len(column)-1; n >= 0; n-- {
+		r := column[n]
+		if r < a || r > z {
+			return 0, fmt.Errorf("invalid character in column, expected A-Z but got [%c]", r)
+		}
+		runePos := int(r-a) + 1
+		index += runePos * int(math.Pow(float64(alphabet), float64(i-1)))
+		i++
+	}
+	return index, nil
+}
+
+// A1ColumnEncode takes in an index value & converts it to A1 Notation
+//
+// # Index 1 is Column A, limit to ZZZ
+//
+// E.g. 3 == C, 29 == AC, 731 == ABC
+func A1ColumnEncode(index int) (string, error) {
+	// Validate index size
+	maxIndex := 18278
+	if index > maxIndex {
+		return "", fmt.Errorf("index cannot be greater than %v (column ZZZ)", maxIndex)
+	}
+
+	// Get column from index
+	l := "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	if index > 26 {
+		letterA, _ := A1ColumnEncode(int(math.Floor(float64(index-1) / 26)))
+		letterB, _ := A1ColumnEncode(index % 26)
+		return letterA + letterB, nil
+	} else {
+		if index == 0 {
+			index = 26
+		}
+		return string(l[index-1]), nil
+	}
+}
 func getFuncAST(funcname, filename string) (_ *ast.FuncDecl, _ *token.FileSet) {
 	//Note function from object instance did not return file and line in new golang version
 	//We still handle in case it's back as old behavior
