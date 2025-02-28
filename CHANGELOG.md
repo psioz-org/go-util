@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.5.1](https://github.com/psioz-org/go-util/compare/v1.5.0...v1.5.1) (2025-02-28)
+
+
+### Bug Fixes
+
+* crc32 padding ([1723aea](https://github.com/psioz-org/go-util/commit/1723aea6a861468ab1ded32a27e16de80c9f0e2d))
+
 ## [1.5.0](https://github.com/psioz-org/go-util/compare/v1.4.0...v1.5.0) (2024-10-21)
 
 
