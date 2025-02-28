@@ -341,25 +341,32 @@ func TestToCrc32(t *testing.T) {
 		want string
 	}{
 		{
-			name: "case 1",
+			name: "input_string",
 			args: args{
 				v: "test2crc",
 			},
 			want: "CC5374E4",
 		},
 		{
-			name: "case 2",
+			name: "input_number_string",
 			args: args{
 				v: "777",
 			},
 			want: "F6DF2F3C",
 		},
 		{
-			name: "case 3",
+			name: "input_integer",
 			args: args{
 				v: 777,
 			},
 			want: "F6DF2F3C",
+		},
+		{
+			name: "output_zero_padding",
+			args: args{
+				v: "something",
+			},
+			want: "09DA31FB",
 		},
 	}
 	for _, tt := range tests {

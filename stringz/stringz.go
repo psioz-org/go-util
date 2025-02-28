@@ -110,8 +110,9 @@ func Snake2Title(s string) string {
 	})
 }
 
+// ToCrc32 return Crc32 zero padding to 8 digits
 func ToCrc32(v interface{}) string {
-	return strings.ToUpper(strconv.FormatUint(uint64(crc32.ChecksumIEEE([]byte(fmt.Sprintf("%v", v)))), 16))
+	return strings.ToUpper(fmt.Sprintf("%08s", strconv.FormatUint(uint64(crc32.ChecksumIEEE([]byte(fmt.Sprintf("%v", v)))), 16)))
 }
 
 func ToJson(obj interface{}, indent string) string {
